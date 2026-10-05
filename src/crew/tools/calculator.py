@@ -1,16 +1,57 @@
 # SPDX-License-Identifier: MIT
 """Financial calculator tool for computing ratios and performance metrics."""
-
-from typing import Any
+from typing import Any, Optional, Type, Union
 
 import numpy as np
 from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
+
+PriceSeries = Optional[Union[str, list[float]]]
+
+
+class FinancialCalculatorInput(BaseModel):
+    """Every parameter any metric can take. Unused ones stay None."""
+
+    metric: str = Field(..., description="Metric to compute, e.g. 'ps_ratio', 'beta'")
+    price: Optional[float] = None
+    earnings_per_share: Optional[float] = None
+    book_value_per_share: Optional[float] = None
+    revenue_per_share: Optional[float] = None
+    enterprise_value: Optional[float] = None
+    ebitda: Optional[float] = None
+    pe_ratio: Optional[float] = None
+    earnings_growth_rate: Optional[float] = None
+    net_income: Optional[float] = None
+    shareholders_equity: Optional[float] = None
+    total_assets: Optional[float] = None
+    total_debt: Optional[float] = None
+    current_assets: Optional[float] = None
+    current_liabilities: Optional[float] = None
+    revenue: Optional[float] = None
+    cost_of_goods_sold: Optional[float] = None
+    operating_income: Optional[float] = None
+    free_cash_flow: Optional[float] = None
+    growth_rate: Optional[float] = None
+    discount_rate: Optional[float] = None
+    terminal_growth_rate: Optional[float] = None
+    years: Optional[int] = None
+    shares_outstanding: Optional[float] = None
+    dividend_per_share: Optional[float] = None
+    dividend_growth_rate: Optional[float] = None
+    required_return: Optional[float] = None
+    sector_pe: Optional[float] = None
+    market_pe: Optional[float] = None
+    risk_free_rate: Optional[float] = None
+    prices: PriceSeries = None
+    stock_prices: PriceSeries = None
+    market_prices: PriceSeries = None
 
 
 class FinancialCalculatorTool(BaseTool):
     """Computes financial ratios and performance metrics from raw numbers."""
 
     name: str = "financial_calculator"
+    args_schema: Type[BaseModel] = FinancialCalculatorInput
     description: str = (
         "Calculates a financial metric given its type and numeric inputs. "
         "Supported metric types and their required parameters:\n"
@@ -42,7 +83,9 @@ class FinancialCalculatorTool(BaseTool):
             handler = _METRIC_HANDLERS.get(metric)
             if not handler:
                 return f"Unknown metric '{metric}'. Supported: {', '.join(_METRIC_HANDLERS)}"
-            value = handler(**kwargs)  # type: ignore[operator]
+            # Drop fields the agent didn't fill in, so handler defaults still apply
+            args = {k: v for k, v in kwargs.items() if v is not None}
+            value = handler(**args)  # type: ignore[operator]
             return f"{metric} = {value}"
         except Exception as e:
             return f"Error calculating {metric}: {e}"
