@@ -48,19 +48,31 @@ def _raw_text(task_output: Any) -> str:
         return raw.strip()
     return str(task_output).strip()
 
+
+_SKIP_SECTIONS = {"INSIGHT", "RECOMMENDATION", "QUICK_ANSWERS", "MARKET PULSE"}
+_SKIP_PREFIXES = ("CHART_DATA", "Peers:")
+
+
+def _is_section_header(line: str) -> bool:
+    text = line.strip().rstrip(":")
+    return bool(text) and text.isupper()
+
+
 def _build_crew_inputs(symbol: str, facts: dict[str, str]) -> dict[str, str]:
     """Pass verified, code-computed metrics to the agents as task inputs."""
     inputs = {"symbol": symbol}
     for task_name, text in facts.items():
         lines = []
+        skipping = False
         for line in text.splitlines():
-            if line.strip().upper() == "INSIGHT":
-                break  # drop canned insight text; agents write their own
-            if line.startswith("CHART_DATA"):
-                continue  # chart JSON is for the UI only
+            if _is_section_header(line):
+                skipping = line.strip().rstrip(":") in _SKIP_SECTIONS
+            if skipping or line.startswith(_SKIP_PREFIXES):
+                continue
             lines.append(line)
         inputs[f"{task_name}_facts"] = "\n".join(lines).strip() or "No verified facts available."
     return inputs
+
 
 class AnalysisPipeline:
     """Runs the CrewAI stock analysis crew and yields LogEntry objects for UI streaming."""
