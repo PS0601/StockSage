@@ -48,6 +48,19 @@ def _raw_text(task_output: Any) -> str:
         return raw.strip()
     return str(task_output).strip()
 
+def _build_crew_inputs(symbol: str, facts: dict[str, str]) -> dict[str, str]:
+    """Pass verified, code-computed metrics to the agents as task inputs."""
+    inputs = {"symbol": symbol}
+    for task_name, text in facts.items():
+        lines = []
+        for line in text.splitlines():
+            if line.strip().upper() == "INSIGHT":
+                break  # drop canned insight text; agents write their own
+            if line.startswith("CHART_DATA"):
+                continue  # chart JSON is for the UI only
+            lines.append(line)
+        inputs[f"{task_name}_facts"] = "\n".join(lines).strip() or "No verified facts available."
+    return inputs
 
 class AnalysisPipeline:
     """Runs the CrewAI stock analysis crew and yields LogEntry objects for UI streaming."""
@@ -128,7 +141,7 @@ class AnalysisPipeline:
                         await progress_q.put(("start", task_names[0], None))
 
                     kickoff_task = asyncio.create_task(
-                        crew.kickoff_async(inputs={"symbol": self.symbol})
+                        crew.kickoff_async(inputs=_build_crew_inputs(self.symbol, deterministic_facts))
                     )
 
                     while not kickoff_task.done() or not progress_q.empty():

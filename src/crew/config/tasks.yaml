@@ -111,11 +111,17 @@ analyze_valuation_ratios:
     - "implications": up to 4 pricing conclusions.
     - "citations": sources used.
 
-    IMPORTANT:
+        IMPORTANT:
     - Return ONLY a valid JSON object. No markdown fences.
     - Every metric MUST show the actual number and a comparison — not just "above average."
     - Do NOT explain what P/E means. State what {symbol}'s P/E TELLS US about pricing.
     - Do NOT run DCF, DDM, or Graham — only ratio interpretation.
+
+    VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
+    {analyze_valuation_ratios_facts}
+    Use these exact values in your output. If any step above asks you to compute a metric
+    listed here, use the verified value instead of recomputing it or estimating it.
+    Your job is to interpret what these numbers mean for {symbol}.
   expected_output: >
     JSON with: summary (valuation stance), metrics (up to 5 with actual numbers and comparisons),
     implications (up to 4 pricing conclusions), citations.
@@ -185,10 +191,16 @@ analyze_price_performance:
     - "risk_notes": up to 3 risk observations with actual numbers.
     - "citations": sources.
 
-    IMPORTANT:
+     IMPORTANT:
     - Return ONLY a valid JSON object. No markdown fences.
-    - You MUST use financial_calculator — do NOT estimate metrics manually.
+    - Use the VERIFIED FACTS below for returns, volatility, Sharpe, beta, and max drawdown — do NOT recompute them with financial_calculator or estimate them manually.
     - Every metric must have the actual number AND the benchmark comparison.
+
+    VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
+    {analyze_price_performance_facts}
+    Use these exact values in your output. If any step above asks you to compute a metric
+    listed here, use the verified value instead of recomputing it or estimating it.
+    Your job is to interpret what these numbers mean for {symbol}.
   expected_output: >
     JSON with: summary (return + risk profile), metrics (up to 5 computed values with comparisons),
     risk_notes (up to 3 with actual numbers), citations.
@@ -257,6 +269,12 @@ analyze_financial_health:
     - Every claim MUST include actual numbers and the CSV source.
     - State "improving", "stable", or "deteriorating" WITH the evidence, not just the label.
     - Do NOT add valuation opinions or investment recommendations.
+
+    VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
+    {analyze_financial_health_facts}
+    Use these exact values in your output. If any step above asks you to compute a metric
+    listed here, use the verified value instead of recomputing it or estimating it.
+    Your job is to interpret what these numbers mean for {symbol}.
   expected_output: >
     JSON with: summary (health direction with evidence), metrics (up to 5 with actual numbers),
     growth_signals (up to 3 with data), caution_signals (up to 3 with data), citations.
@@ -318,6 +336,13 @@ analyze_market_sentiment:
     - analyst_consensus MUST include actual % or count numbers, not just "bullish."
     - Every key_point must reference specific data.
     - Do NOT provide investment advice or recommendations.
+    - Use the analyst counts from the VERIFIED FACTS below for the most recent period. Buy%, Hold% and Sell% must add up to 100%.
+
+    VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
+    {analyze_market_sentiment_facts}
+    Use these exact values in your output. If any step above asks you to compute a metric
+    listed here, use the verified value instead of recomputing it or estimating it.
+    Your job is to interpret what these numbers mean for {symbol}.
   expected_output: >
     JSON with: summary (expectation state with data), sentiment_signal, analyst_consensus (with numbers),
     key_points (up to 4 data-backed), news (up to 5), citations.
@@ -431,12 +456,16 @@ generate_investment_report:
     - "guidance_for_existing_holders": one sentence.
     - "guidance_for_new_buyers": one sentence.
     - "citations": sources.
-
     IMPORTANT:
     - Return ONLY a valid JSON object. No markdown fences.
     - Every strength/risk must trace to a specific upstream agent finding.
     - Do NOT restate raw numbers without insight — say what they MEAN.
     - Confidence MUST come from the reviewer's confidence_adjustment.
+
+    VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
+    {generate_investment_report_facts}
+    Use these exact values whenever you mention company basics such as price, market cap or sector.
+    Your verdict and reasoning must still come from the upstream agents' findings and the reviewer's check.
   expected_output: >
     JSON with: summary, verdict, confidence, strengths, risks, watch_next,
     best_suited_for, not_ideal_for, guidance_for_existing_holders,
