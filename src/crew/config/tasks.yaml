@@ -1,64 +1,12 @@
-validate_data_sanity:
-  description: >
-    Validate financial data quality and model applicability for {symbol}.
-
-    STEP 1 — FILE AVAILABILITY:
-    Use the csv_reader tool to attempt loading each of these files for {symbol}:
-      company_info.csv, historical_prices.csv, income_statement.csv, balance_sheet.csv,
-      cash_flow.csv, recommendations.csv, institutional_holders.csv, market_index.csv,
-      sector_index.csv, news.csv, quarterly_income_statement.csv.
-    For each file, record: parseable (yes/no), row count, whether critical columns exist.
-
-    STEP 2 — MARKET CONTEXT:
-    From company_info.csv, determine market context as exactly one of: US or India.
-    Classify company_type as exactly one of: Bank, Financial, Non-Financial.
-
-    STEP 3 — RATIO APPLICABILITY (assign one status each):
-      PE Ratio          → check: company_info.csv.trailingEps > 0
-      Forward PE        → check: company_info.csv.forwardPE present and > 0
-      P/B Ratio         → check: company_info.csv.bookValue > 0
-      P/S Ratio         → check: company_info.csv.revenuePerShare > 0
-      EV/EBITDA         → check: company_info.csv.enterpriseValue > 0 AND company_info.csv.ebitda > 0
-      PEG Ratio         → check: company_info.csv.trailingPE > 0 AND company_info.csv.earningsGrowth != 0
-      ROE               → check: income_statement.csv has "Net Income", balance_sheet.csv has "Stockholders Equity" > 0
-      ROA               → check: income_statement.csv has "Net Income", balance_sheet.csv has "Total Assets" > 0
-      Debt-to-Equity    → check: balance_sheet.csv has "Total Debt" and "Stockholders Equity" > 0
-      Current Ratio     → check: balance_sheet.csv has "Current Assets" and "Current Liabilities" > 0
-      Gross Margin      → check: income_statement.csv has "Total Revenue" > 0 and "Cost Of Revenue"
-      Net Margin        → check: income_statement.csv has "Net Income" and "Total Revenue" > 0
-      Operating Margin  → check: income_statement.csv has "Operating Income" and "Total Revenue" > 0
-
-    STEP 4 — VALUATION MODEL APPLICABILITY (assign one status each):
-      DCF               → check: cash_flow.csv has "Free Cash Flow" > 0, company_info.csv.earningsGrowth present
-      DDM               → check: company_info.csv.dividendRate > 0 and consistent dividend history
-      Graham Number     → check: company_info.csv.trailingEps > 0 and company_info.csv.bookValue > 0
-      Relative Valuation → check: company_info.csv.trailingEps > 0
-
-    STATUS RULES:
-      HARD_BLOCKED = file missing, column absent, or denominator is zero/null
-      SOFT_BLOCKED = data exists but economically misleading (e.g. negative EPS makes PE meaningless)
-      VALID = data present and calculation is meaningful
-
-    STEP 5 — ISSUES:
-    For each hard/soft block, emit evidence in format: file_name.column_name -> issue
-    Example: company_info.trailingEps -> negative
-
-    IMPORTANT:
-    - Return ONLY a valid JSON object matching the Pydantic schema.
-    - Do not wrap in markdown/code fences.
-    - Do NOT interpret investment quality — only validate data readiness.
-  expected_output: >
-    JSON with: summary (counts sentence), gate_status, market_context, company_type,
-    validated_files, missing_or_invalid_files, critical_issues, warnings,
-    ratio_applicability (13 items), valuation_model_applicability (4 items).
-  agent: data_sanity_agent
-
 analyze_valuation_ratios:
   description: >
     Determine whether {symbol} is cheap, fairly valued, or expensive using specific
     ratio comparisons.
 
-    PRE-CONDITION: Only analyze ratios marked VALID by validate_data_sanity. Skip SOFT_BLOCKED and HARD_BLOCKED.
+    PRE-CONDITION: Only analyze ratios marked VALID in the DATA SANITY RESULTS below. Skip SOFT_BLOCKED and HARD_BLOCKED.
+
+    DATA SANITY RESULTS (computed in Python by fixed rules; authoritative):
+    {data_sanity_facts}
 
     STEP 1 — READ RAW VALUES:
     Use csv_reader to read company_info.csv for {symbol}. Extract:
@@ -126,8 +74,6 @@ analyze_valuation_ratios:
     JSON with: summary (valuation stance), metrics (up to 5 with actual numbers and comparisons),
     implications (up to 4 pricing conclusions), citations.
   agent: ratio_analyst
-  context:
-    - validate_data_sanity
 
 analyze_price_performance:
   description: >
@@ -366,7 +312,8 @@ review_analysis:
       - Financial health says "deteriorating" but sentiment shows "positive" — explain.
 
     CHECK 3 — DATA SANITY VIOLATIONS:
-    Check if any analyst used a ratio or model that data_sanity marked as SOFT_BLOCKED or HARD_BLOCKED.
+    Check if any analyst used a ratio or model marked SOFT_BLOCKED or HARD_BLOCKED in the DATA SANITY RESULTS:
+    {data_sanity_facts}
 
     CHECK 4 — COMPLETENESS:
     Did any analyst skip critical data that was available and marked VALID?

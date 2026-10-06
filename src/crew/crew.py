@@ -7,7 +7,6 @@ from crewai.project import CrewBase, agent, crew, task
 from src.core.config.config import CREW_VERBOSE
 from src.core.config.llm import get_llm
 from src.crew.schemas import (
-    DataSanityOutput,
     FinalReportOutput,
     FinancialHealthOutput,
     PerformanceOutput,
@@ -22,7 +21,7 @@ from src.crew.tools.search import create_search_tool
 
 @CrewBase
 class StockAnalysisCrew:
-    """Stock analysis crew — 7 agents, 7 tasks, sequential execution."""
+    """Stock analysis crew — 6 agents, 6 tasks, sequential execution. Data sanity is computed in sanity.py."""
 
     agents_config = "config/agents.yaml"
     tasks_config = "config/tasks.yaml"
@@ -34,15 +33,6 @@ class StockAnalysisCrew:
         self.llm = get_llm()
 
     # ── Agents ──────────────────────────────────────────────
-
-    @agent
-    def data_sanity_agent(self) -> Agent:
-        return Agent(
-            config=self.agents_config["data_sanity_agent"],
-            tools=[self.csv_reader],
-            llm=self.llm,
-            verbose=CREW_VERBOSE,
-        )
 
     @agent
     def ratio_analyst(self) -> Agent:
@@ -99,13 +89,6 @@ class StockAnalysisCrew:
         )
 
     # ── Tasks ───────────────────────────────────────────────
-
-    @task
-    def validate_data_sanity(self) -> Task:
-        return Task(
-            config=self.tasks_config["validate_data_sanity"],
-            output_pydantic=DataSanityOutput,
-        )
 
     @task
     def analyze_valuation_ratios(self) -> Task:

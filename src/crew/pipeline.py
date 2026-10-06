@@ -12,6 +12,7 @@ from uuid import uuid4
 from src.core.config.enums import ProcessingStage, StatusType, SubStage
 from src.core.config.models import LogEntry
 from src.crew.facts import build_task_facts
+from src.crew.sanity import build_data_sanity_report
 from src.crew.structured_output import (
     serialize_structured_output,
     validate_task_output,
@@ -58,9 +59,14 @@ def _is_section_header(line: str) -> bool:
     return bool(text) and text.isupper()
 
 
-def _build_crew_inputs(symbol: str, facts: dict[str, str]) -> dict[str, str]:
+def _build_crew_inputs(
+    symbol: str, facts: dict[str, str], data_sanity_text: str = ""
+) -> dict[str, str]:
     """Pass verified, code-computed metrics to the agents as task inputs."""
-    inputs = {"symbol": symbol}
+    inputs = {
+        "symbol": symbol,
+        "data_sanity_facts": data_sanity_text or "No data sanity results available.",
+    }
     for task_name, text in facts.items():
         lines = []
         skipping = False
@@ -128,6 +134,13 @@ class AnalysisPipeline:
             loop = asyncio.get_running_loop()
             deterministic_facts = build_task_facts(self.symbol)
 
+            # Data sanity is rule-based, so it is computed in Python, not by an agent.
+            sanity_text = serialize_structured_output(
+                "validate_data_sanity", build_data_sanity_report(self.symbol)
+            )
+            yield self._log(SubStage.VALIDATING_DATA_SANITY, StatusType.IN_PROGRESS)
+            yield self._log(SubStage.VALIDATING_DATA_SANITY, StatusType.SUCCESS, sanity_text)
+
             progress_q: asyncio.Queue[tuple[str, str, Any]] = asyncio.Queue()
 
             def on_task_done(task_output: Any) -> None:
@@ -154,7 +167,7 @@ class AnalysisPipeline:
 
                     kickoff_task = asyncio.create_task(
                         crew.kickoff_async(
-                            inputs=_build_crew_inputs(self.symbol, deterministic_facts)
+                            inputs=_build_crew_inputs(self.symbol, deterministic_facts, sanity_text)
                         )
                     )
 
