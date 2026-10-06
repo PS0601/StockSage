@@ -85,7 +85,7 @@ def get_llm() -> LLM:
         "temperature": LLM_TEMPERATURE,
         "max_tokens": LLM_MAX_TOKENS,
         "timeout": LLM_TIMEOUT,
-	"is_litellm": True,
+        "is_litellm": True,
     }
 
     if _is_ollama_model(active_model):

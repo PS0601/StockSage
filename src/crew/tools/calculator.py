@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 """Financial calculator tool for computing ratios and performance metrics."""
+
 from typing import Any, Optional, Type, Union
 
 import numpy as np

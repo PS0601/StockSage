@@ -153,7 +153,9 @@ class AnalysisPipeline:
                         await progress_q.put(("start", task_names[0], None))
 
                     kickoff_task = asyncio.create_task(
-                        crew.kickoff_async(inputs=_build_crew_inputs(self.symbol, deterministic_facts))
+                        crew.kickoff_async(
+                            inputs=_build_crew_inputs(self.symbol, deterministic_facts)
+                        )
                     )
 
                     while not kickoff_task.done() or not progress_q.empty():
