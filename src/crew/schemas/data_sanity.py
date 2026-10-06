@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 from typing import Literal
 
@@ -11,8 +10,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.crew.schemas._base import (
     coerce_summary_text,
-    deterministic_data_sanity_file_statuses,
-    extract_symbol_from_text,
     normalize_payload_lists,
 )
 from src.crew.schemas._constants import (
@@ -55,10 +52,6 @@ class DataSanityOutput(BaseModel):
         payload = dict(value)
         normalize_payload_lists(cls, payload)
 
-        active_symbol = os.getenv(
-            "STOCKSAGE_ACTIVE_SYMBOL", ""
-        ).strip().upper() or extract_symbol_from_text(str(payload.get("summary", "")) or "")
-
         ratios = payload.get("ratio_applicability") or []
         models = payload.get("valuation_model_applicability") or []
         statuses: list[str] = []
@@ -84,17 +77,12 @@ class DataSanityOutput(BaseModel):
         else:
             payload["gate_status"] = "PASS"
 
-        if active_symbol:
-            det_validated, det_missing = deterministic_data_sanity_file_statuses(active_symbol)
-            payload["validated_files"] = det_validated
-            payload["missing_or_invalid_files"] = det_missing
-        else:
-            payload["validated_files"] = _normalize_file_statuses(
-                payload.get("validated_files"), default_status="ok"
-            )
-            payload["missing_or_invalid_files"] = _normalize_file_statuses(
-                payload.get("missing_or_invalid_files"), default_status="missing"
-            )
+        payload["validated_files"] = _normalize_file_statuses(
+            payload.get("validated_files"), default_status="ok"
+        )
+        payload["missing_or_invalid_files"] = _normalize_file_statuses(
+            payload.get("missing_or_invalid_files"), default_status="missing"
+        )
 
         payload["critical_issues"] = _coerce_file_level_issues(payload.get("critical_issues"))
         payload["warnings"] = _coerce_file_level_issues(payload.get("warnings"))
