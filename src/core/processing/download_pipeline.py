@@ -151,7 +151,8 @@ class DownloadPipeline:
         yield self._log(SubStage.DOWNLOADING_TRENDS, StatusType.IN_PROGRESS)
         time.sleep(2)  # Throttle to reduce 429 rate limits from Google Trends
         company_name = self.stock_data.company_info.get("longName", "") or self.symbol
-        trends_df = TrendsFetcher(company_name).fetch()
+        geo = "IN" if self.symbol.upper().endswith((".NS", ".BO")) else "US"
+        trends_df = TrendsFetcher(company_name, geo=geo).fetch()
         if not trends_df.empty:
             self.stock_data.market_intel.google_trends = trends_df
             yield self._log(
