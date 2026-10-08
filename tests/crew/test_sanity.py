@@ -216,3 +216,11 @@ def test_matching_currencies_keep_ratios_valid(data_dir: Path) -> None:
     report = build_data_sanity_report("TEST")
 
     assert _status(report, "P/S Ratio") == "VALID"
+
+
+def test_implausible_price_to_book_is_blocked(data_dir: Path) -> None:
+    _write_dataset(data_dir, company={"priceToBook": 0.001})
+    report = build_data_sanity_report("TEST")
+
+    assert _status(report, "P/B Ratio") == "SOFT_BLOCKED"
+    assert _status(report, "Graham Number") == "SOFT_BLOCKED"

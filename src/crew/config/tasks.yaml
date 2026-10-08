@@ -109,7 +109,7 @@ analyze_price_performance:
       - Sharpe ratio: metric="sharpe_ratio", prices=<stock close prices>, risk_free_rate=0.04
       - Beta: metric="beta", stock_prices=<stock>, market_prices=<market index>
       - Max drawdown: metric="max_drawdown", prices=<stock close prices>
-      Also compute market volatility for comparison.
+      Market volatility is in the VERIFIED FACTS (Market Volatility); do not compute it.
 
     STEP 4 — PRODUCE INSIGHTS (not definitions):
       For each metric, state the actual number + what it means for THIS stock:

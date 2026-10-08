@@ -47,7 +47,9 @@ class StockAnalysisCrew:
     def performance_analyst(self) -> Agent:
         return Agent(
             config=self.agents_config["performance_analyst"],
-            tools=[self.csv_reader, self.calculator],
+            # Every performance metric is precomputed in facts.py; with a calculator the
+            # agent re-derived them from a few hand-picked prices and got them wrong.
+            tools=[self.csv_reader],
             llm=self.llm,
             verbose=CREW_VERBOSE,
         )

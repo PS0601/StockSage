@@ -25,7 +25,7 @@ class USFormatValidator(FormatValidator):
         return ValidationResult(
             is_valid=False,
             error_code=ValidationErrorCode.INVALID_FORMAT.value,
-            error_message="Invalid symbol format. US symbols: 1-5 letters (e.g., AAPL).",
+            error_message="Invalid symbol format. US symbols: 1-5 letters, optionally with a share class (e.g., AAPL, BRK-B).",
             market="US",
         )
 

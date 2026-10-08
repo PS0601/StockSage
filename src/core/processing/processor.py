@@ -111,18 +111,28 @@ class StockProcessor:
         async with _ACTIVE_LOCK:
             yield self._log(ProcessingStage.STARTING, message=f"Processing symbol: {self.symbol}")
 
-            valid = True
+            # The UI only shows an error for COMPLETE + FAILED entries; without one, a
+            # failed validation or download ends as a normal "complete" and the page goes blank.
+            failure = ""
             for entry in self._validate():
                 yield entry
                 if entry.status_type == StatusType.FAILED:
-                    valid = False
-            if not valid:
+                    failure = entry.message or f"{self.symbol} is not a valid symbol"
+            if failure:
+                yield self._log(ProcessingStage.COMPLETE, status=StatusType.FAILED, message=failure)
                 return
 
             self._download_ok = True
             async for entry in self._download():
                 yield entry
+                if entry.status_type == StatusType.FAILED and entry.message:
+                    failure = entry.message
             if not self._download_ok:
+                yield self._log(
+                    ProcessingStage.COMPLETE,
+                    status=StatusType.FAILED,
+                    message=failure or f"Could not download data for {self.symbol}",
+                )
                 return
 
             async for entry in self._analyze():

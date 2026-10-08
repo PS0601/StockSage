@@ -197,6 +197,23 @@ def _block_for_currency_mismatch(
     )
 
 
+# A P/B below this is almost always a data error (e.g. BRK-B: Yahoo reports the Class A
+# book value per share against the Class B price, giving P/B ~0.001).
+_MIN_PLAUSIBLE_PB = 0.1
+_BOOK_VALUE_DEPENDENT = {"P/B Ratio", "Graham Number"}
+
+
+def _block_for_implausible_pb(item: ApplicabilityItem, pb: float) -> ApplicabilityItem:
+    if item.name not in _BOOK_VALUE_DEPENDENT or item.status != "VALID":
+        return item
+    return ApplicabilityItem(
+        name=item.name,
+        status="SOFT_BLOCKED",
+        reason=f"Price-to-book of {pb:.4f} is implausible; book value likely uses another share class",
+        evidence=[f"company_info.priceToBook -> implausible ({pb:.4f})"],
+    )
+
+
 def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     """Run every data-sanity rule for ``symbol`` and return the full report."""
     sym = symbol.upper()
@@ -250,6 +267,15 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     fin_ccy = _text(row, "financialCurrency")
     if price_ccy and fin_ccy and price_ccy != fin_ccy:
         ratios = [_block_for_currency_mismatch(i, price_ccy, fin_ccy) for i in ratios]
+
+    pb_text = _text(row, "priceToBook")
+    try:
+        pb_value = float(pb_text) if pb_text else None
+    except ValueError:
+        pb_value = None
+    if pb_value is not None and 0 < pb_value < _MIN_PLAUSIBLE_PB:
+        ratios = [_block_for_implausible_pb(i, pb_value) for i in ratios]
+        models = [_block_for_implausible_pb(i, pb_value) for i in models]
 
     items = [*ratios, *models]
     hard = [item for item in items if item.status == "HARD_BLOCKED"]

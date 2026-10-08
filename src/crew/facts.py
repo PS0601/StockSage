@@ -489,6 +489,10 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
         market_total = (mp[-1] - mp[0]) / mp[0]
 
     beta = _beta_by_date(prices, market)
+    # Benchmark volatility, so agents never estimate it from a handful of prices.
+    market_vol = None
+    if len(mp) >= 3:
+        market_vol = float(np.std(np.diff(mp) / mp[:-1], ddof=1) * np.sqrt(252) * 100)
 
     vol_pct = vol * 100
     if vol_pct < 15:
@@ -515,6 +519,7 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
         f"Volatility Label: {vol_label}",
         f"Max Drawdown (%): {_fmt_num(mdd * 100, '%')}",
         f"Beta (vs market): {_fmt_num(beta, 'x')}",
+        f"Market Volatility (%): {_fmt_num(market_vol, '%')}",
         f"Sharpe Ratio: {sharpe}",
         "Risk Metric Basis: Beta above is computed from 1 year of daily prices vs the "
         "market index; Yahoo's company_info beta uses 5 years of monthly data, so the "
