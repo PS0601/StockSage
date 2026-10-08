@@ -39,3 +39,9 @@ def test_health_negative_cash_flow_is_flagged() -> None:
 def test_sentiment_thresholds() -> None:
     assert "strongly bullish" in _sentiment_insight(95.1, 1.6, 61)
     assert "No analyst ratings" in _sentiment_insight(0.0, 0.0, 0)
+
+
+def test_high_price_to_book_alone_is_not_rich() -> None:
+    # Asset-light company: moderate P/E, high P/B (e.g. GOOGL) is fair, not rich.
+    row = pd.Series({"trailingPE": 17.5, "priceToBook": 6.8})
+    assert "near fair value" in _valuation_insight(row)

@@ -308,7 +308,6 @@ def _quick_answers(
 
 def _valuation_insight(row: pd.Series) -> str:
     pe = _f(row, "trailingPE")
-    pb = _f(row, "priceToBook")
     peg = _f(row, "pegRatio")
     growth = _f(row, "earningsGrowth")
     if pe is None or pe <= 0:
@@ -316,7 +315,7 @@ def _valuation_insight(row: pd.Series) -> str:
             "No meaningful P/E (losses or missing earnings); "
             "judge value on sales and book multiples instead."
         )
-    if pe > 25 or (pb is not None and pb > 3):
+    if pe > 25:
         if peg is not None and 0 < peg < 1 and growth is not None and growth > 0:
             return (
                 f"Multiples look rich (P/E {pe:.1f}x), but a PEG of {peg:.2f}x "
@@ -381,10 +380,9 @@ def _sentiment_insight(buy_pct: float, sell_pct: float, total: int) -> str:
 
 def _valuation_verdict(row: pd.Series) -> str:
     pe = _f(row, "trailingPE")
-    pb = _f(row, "priceToBook")
     if pe is None:
         return "Valuation Verdict: Unknown | Insufficient data"
-    if pe > 25 or (pb is not None and pb > 3):
+    if pe > 25:
         return "Valuation Verdict: Yes | Trading above fair value"
     if pe > 15:
         return "Valuation Verdict: Fair | Trading near fair value"
@@ -731,10 +729,9 @@ def _mini_screener(
 ) -> str:
     """One-line screener computed from the stock's own data."""
     pe = _f(row, "trailingPE")
-    pb = _f(row, "priceToBook")
     if pe is None or pe <= 0:
         valuation = "N/A"
-    elif pe > 25 or (pb is not None and pb > 3):
+    elif pe > 25:
         valuation = "Rich"
     elif pe > 15:
         valuation = "Fair"
