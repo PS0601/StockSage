@@ -124,11 +124,19 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 | Analyst consensus percentages summed to 78-119% | LLM doing the division | Computed in Python |
 | Mixed-basis figures (OCF labeled as FCF; fiscal-year vs latest-quarter growth; D/E; beta) | Missing labels and basis | Corrected labels; basis notes in the facts |
 | Google Trends always failed | pytrends uses an option removed in urllib3 v2 | Own retry loop; region now matches the stock's market (was always India) |
+| Beta wrong when stock and index calendars differ (RELIANCE 0.04 vs 0.96) | Prices paired by row position instead of date | Returns joined on trading date |
+| FCF growth had the wrong sign for negative cash flow (JPM +252% while worsening) | `(new - old) / old` flips sign when `old` is negative | Divide by `abs(old)` |
+| Blocked ratios still displayed (MCD P/B -159.67x) | Facts ignored the data sanity report | Blocked ratios masked as N/A for agents and cards |
+| Card insights and Mini Screener were canned text ("healthy cash generation" for a cash-burning company) | Hard-coded strings | Generated from each stock's data with documented thresholds |
+| Data-quality gate showed FAIL for normal stocks (no dividend, banks) | Any blocked metric failed the gate | NOT_APPLICABLE status; FAIL only when core data files are missing |
+| Valuation badge said FAIR VALUE with no P/E, and OVERVALUED from P/B alone | Missing verdict defaulted to fair; P/B rule penalized asset-light firms | INSUFFICIENT DATA badge; verdict based on P/E |
+| Agent output contained drafting artifacts ("...wait, expanded slightly") | Agents recomputed margins themselves | Fiscal-year margins computed in Python and passed as facts |
+| Indian stocks compared against the "S&P 500" | Index name hard-coded | Market-aware index name in prompts, facts and cards |
 | CI had never passed | Formatting issues; 84 known dependency vulnerabilities | Fixed formatting; upgraded lockfile (80 fixed, 4 unpatched advisories in an unused dependency documented in CI) |
 
-Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies.
+Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies. Missing values show plain N/A (no "N/Ax"), data-quality issues name the failing check, sentiment is downgraded after heavy underperformance, market cap falls back to non-diluted cap when missing, and Google Trends retries with the common company name.
 
-**Quality gates:** 250 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+**Quality gates:** 287 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
 
 ## Make commands
 
