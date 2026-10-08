@@ -345,6 +345,33 @@ def _valuation_facts(row: pd.Series, cash: pd.DataFrame | None, symbol: str) -> 
     return "\n".join(lines)
 
 
+def _close_by_date(df: pd.DataFrame | None) -> pd.Series:
+    """Close prices indexed by trading date (YYYY-MM-DD)."""
+    if df is None or df.empty or "Close" not in df.columns:
+        return pd.Series(dtype=float)
+    date_col = "Date" if "Date" in df.columns else df.columns[0]
+    closes = pd.to_numeric(df["Close"], errors="coerce").to_numpy()
+    dates = df[date_col].astype(str).str[:10].to_numpy()
+    return pd.Series(closes, index=dates).dropna()
+
+
+def _beta_by_date(prices: pd.DataFrame | None, market: pd.DataFrame | None) -> float | None:
+    """Beta of daily returns, pairing stock and market by date, not by row position.
+
+    Stocks and their index can have different trading calendars (e.g. Indian holidays),
+    so position-based pairing silently misaligns the two series.
+    """
+    stock = _close_by_date(prices).pct_change(fill_method=None)
+    index = _close_by_date(market).pct_change(fill_method=None)
+    joined = pd.concat([stock, index], axis=1, join="inner").dropna()
+    if len(joined) < 3:
+        return None
+    market_var = joined.iloc[:, 1].var()
+    if not market_var:
+        return None
+    return float(joined.iloc[:, 0].cov(joined.iloc[:, 1]) / market_var)
+
+
 def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None) -> str:
     sp = _series_close(prices)
     mp = _series_close(market)
@@ -365,14 +392,7 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
     if len(mp) >= 3:
         market_total = (mp[-1] - mp[0]) / mp[0]
 
-    beta = None
-    if len(mp) >= 3:
-        min_len = min(len(sp), len(mp))
-        sr2 = np.diff(sp[:min_len]) / sp[: min_len - 1]
-        mr2 = np.diff(mp[:min_len]) / mp[: min_len - 1]
-        cov = np.cov(sr2, mr2)
-        if cov[1, 1] != 0:
-            beta = float(cov[0, 1] / cov[1, 1])
+    beta = _beta_by_date(prices, market)
 
     vol_pct = vol * 100
     if vol_pct < 15:
