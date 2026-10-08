@@ -14,7 +14,7 @@ def _render_valuation_card(raw: str, symbol: str) -> str:  # noqa: ARG001
     insight = _parse_kv(raw, "Insight") or ""
 
     val_verdict_line = _parse_kv(raw, "Valuation Verdict")
-    val_answer = "Fair"
+    val_answer = "Unknown"
     val_desc = ""
     if val_verdict_line and " | " in val_verdict_line:
         val_answer, val_desc = val_verdict_line.split(" | ", 1)
@@ -28,10 +28,16 @@ def _render_valuation_card(raw: str, symbol: str) -> str:  # noqa: ARG001
         badge_text, badge_cls = "OVERVALUED", "bg-red-100 text-red-700 border border-red-300"
     elif is_cheap:
         badge_text, badge_cls = "UNDERVALUED", "bg-green-100 text-green-700 border border-green-300"
-    else:
+    elif val_answer.lower() == "fair":
         badge_text, badge_cls = (
             "FAIR VALUE",
             "bg-yellow-100 text-yellow-700 border border-yellow-300",
+        )
+    else:
+        # Unknown or missing verdict (e.g. no P/E because the company has losses).
+        badge_text, badge_cls = (
+            "INSUFFICIENT DATA",
+            "bg-gray-100 text-gray-700 border border-gray-300",
         )
 
     pe = _parse_kv(raw, "P/E Ratio") or _parse_kv(raw, "P/E (x)")

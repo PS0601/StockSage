@@ -208,7 +208,7 @@ def test_valuation_card_fair_value():
 def test_valuation_card_minimal_input():
     html = _render_valuation_card("", "MSFT")
     assert 'data-section="valuation"' in html
-    assert "FAIR VALUE" in html  # default when no verdict present
+    assert "INSUFFICIENT DATA" in html  # no verdict means no valuation claim
 
 
 # ---------------------------------------------------------------------------
@@ -441,3 +441,18 @@ def test_data_quality_card_missing_data():
     html = _render_data_quality_card(raw, "AAPL")
     assert "1 missing" in html
     assert "1 critical" in html
+
+
+def test_valuation_badge_fair_verdict_shows_fair_value() -> None:
+    from src.app.utils.formatters._valuation import _render_valuation_card
+
+    html = _render_valuation_card("Valuation Verdict: Fair | Trading near fair value", "TEST")
+    assert "FAIR VALUE" in html
+
+
+def test_valuation_badge_unknown_verdict_shows_insufficient_data() -> None:
+    from src.app.utils.formatters._valuation import _render_valuation_card
+
+    html = _render_valuation_card("Valuation Verdict: Unknown | Insufficient data", "TEST")
+    assert "INSUFFICIENT DATA" in html
+    assert "FAIR VALUE" not in html
