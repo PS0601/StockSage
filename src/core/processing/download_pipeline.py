@@ -14,7 +14,7 @@ from src.core.market.fetcher import StockDataFetcher
 from src.core.market.news import NewsFetcher
 from src.core.market.stock_data import BenchmarkData, StockData
 from src.core.market.storage import CSVStorage
-from src.core.market.trends import TrendsFetcher
+from src.core.market.trends import TrendsFetcher, common_name
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +154,11 @@ class DownloadPipeline:
         company_name = self.stock_data.company_info.get("longName", "") or self.symbol
         geo = "IN" if is_indian_symbol(self.symbol) else "US"
         trends_df = TrendsFetcher(company_name, geo=geo).fetch()
+        if trends_df.empty:
+            # Legal names ("..., Inc.") often have no Trends data; retry with the common name.
+            short_name = common_name(company_name)
+            if short_name != company_name:
+                trends_df = TrendsFetcher(short_name, geo=geo).fetch()
         if not trends_df.empty:
             self.stock_data.market_intel.google_trends = trends_df
             yield self._log(

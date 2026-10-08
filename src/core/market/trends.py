@@ -2,6 +2,7 @@
 """Google Trends fetching via pytrends."""
 
 import logging
+import re
 import time
 
 import pandas as pd
@@ -60,3 +61,22 @@ class TrendsFetcher:
                 time.sleep(wait)
 
         return pd.DataFrame()
+
+
+_LEGAL_SUFFIX = re.compile(
+    r"[,\s]+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|holdings)\.?$",
+    re.IGNORECASE,
+)
+
+
+def common_name(name: str) -> str:
+    """Company name without legal suffixes ("Rivian Automotive, Inc." -> "Rivian Automotive").
+
+    People rarely search for the legal form, so Google Trends may have no data for it.
+    """
+    result = name.strip()
+    previous = None
+    while previous != result:
+        previous = result
+        result = _LEGAL_SUFFIX.sub("", result).strip()
+    return result.rstrip(" ,&") or name
