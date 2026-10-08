@@ -7,6 +7,7 @@ from collections.abc import Generator
 from uuid import uuid4
 
 from src.core.config.enums import ProcessingStage, StatusType, SubStage
+from src.core.config.markets import is_indian_symbol
 from src.core.config.models import LogEntry
 from src.core.market.benchmark import BenchmarkFetcher
 from src.core.market.fetcher import StockDataFetcher
@@ -151,7 +152,7 @@ class DownloadPipeline:
         yield self._log(SubStage.DOWNLOADING_TRENDS, StatusType.IN_PROGRESS)
         time.sleep(2)  # Throttle to reduce 429 rate limits from Google Trends
         company_name = self.stock_data.company_info.get("longName", "") or self.symbol
-        geo = "IN" if self.symbol.upper().endswith((".NS", ".BO")) else "US"
+        geo = "IN" if is_indian_symbol(self.symbol) else "US"
         trends_df = TrendsFetcher(company_name, geo=geo).fetch()
         if not trends_df.empty:
             self.stock_data.market_intel.google_trends = trends_df

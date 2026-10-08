@@ -20,6 +20,7 @@ from src.core.config.data_contracts import (
     CSV_RECOMMENDATIONS,
     DATA_DIR,
 )
+from src.core.config.markets import is_indian_symbol
 
 
 def build_task_facts(symbol: str) -> dict[str, str]:
@@ -88,7 +89,7 @@ def _fmt_num(val: float | None, suffix: str = "", digits: int = 2, prefix: str =
 
 def _currency_prefix(symbol: str) -> str:
     s = symbol.upper()
-    if s.endswith(".NS") or s.endswith(".BO"):
+    if is_indian_symbol(s):
         return "\u20b9"
     return "$"
 

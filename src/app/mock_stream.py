@@ -5,6 +5,7 @@ import asyncio
 
 from src.app.utils.formatters import format_log_entry
 from src.core.config.enums import ProcessingStage, StatusType, SubStage
+from src.core.config.markets import is_indian_symbol
 from src.core.config.models import LogEntry
 
 SSE_RETRY_MS = 3000
@@ -128,7 +129,7 @@ Structured Summary: Financial profile is healthy with balanced growth and risk.
 
 def _currency_prefix(symbol: str) -> str:
     s = symbol.upper()
-    if s.endswith(".NS") or s.endswith(".BO"):
+    if is_indian_symbol(s):
         return "\u20b9"
     return "$"
 

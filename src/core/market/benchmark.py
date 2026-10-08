@@ -8,6 +8,7 @@ import pandas as pd
 import yfinance as yf
 
 from src.core.config.config import DEFAULT_PERIOD
+from src.core.config.markets import is_indian_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class BenchmarkFetcher:
 
     def __init__(self, symbol: str, company_info: dict, period: str = DEFAULT_PERIOD):
         self._period = period
-        self._market = "india" if symbol.endswith((".NS", ".BO")) else "us"
+        self._market = "india" if is_indian_symbol(symbol) else "us"
         self._sector = company_info.get("sector", "")
 
     def fetch_market_index(self) -> Tuple[pd.DataFrame, str]:

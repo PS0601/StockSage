@@ -22,6 +22,7 @@ from src.core.config.data_contracts import (
     CSV_DIVIDENDS,
     CSV_INCOME_STATEMENT,
 )
+from src.core.config.markets import is_indian_symbol
 from src.crew.facts import _f, _read_csv, _s
 from src.crew.schemas import DataSanityOutput
 from src.crew.schemas._base import deterministic_data_sanity_file_statuses
@@ -199,7 +200,7 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
         {
             "summary": f"{len(hard)} hard blocks, {len(soft)} soft blocks identified",
             "gate_status": gate,
-            "market_context": "India" if sym.endswith((".NS", ".BO")) else "US",
+            "market_context": "India" if is_indian_symbol(sym) else "US",
             "company_type": _company_type(row),
             "validated_files": validated,
             "missing_or_invalid_files": missing,

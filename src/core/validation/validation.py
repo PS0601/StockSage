@@ -6,6 +6,7 @@ import re
 import yfinance as yf
 
 from src.core.config.enums import ValidationErrorCode
+from src.core.config.markets import is_indian_symbol as _is_indian_symbol
 from src.core.config.models import ValidationResult
 from src.core.validation.base import FormatValidator, MarketValidator
 
@@ -84,7 +85,7 @@ class ValidatorFactory:
 
     @staticmethod
     def is_indian_symbol(symbol: str) -> bool:
-        return symbol.endswith((".NS", ".BO"))
+        return _is_indian_symbol(symbol)
 
     @staticmethod
     def create_format_validator(symbol: str) -> FormatValidator:
