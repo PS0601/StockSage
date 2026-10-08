@@ -132,11 +132,19 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 | Valuation badge said FAIR VALUE with no P/E, and OVERVALUED from P/B alone | Missing verdict defaulted to fair; P/B rule penalized asset-light firms | INSUFFICIENT DATA badge; verdict based on P/E |
 | Agent output contained drafting artifacts ("...wait, expanded slightly") | Agents recomputed margins themselves | Fiscal-year margins computed in Python and passed as facts |
 | Indian stocks compared against the "S&P 500" | Index name hard-coded | Market-aware index name in prompts, facts and cards |
+| Invalid ticker left a blank page | Validation and download failures ended as a normal "complete" | A visible failure with the real reason is sent to the page |
+| Ratios mixed currencies (INFY P/S 199x, EV/EBITDA 900x) | Price in INR, financials in USD | P/S and EV/EBITDA blocked when the currencies differ |
+| Implausible P/B (BRK-B 0.001x) | Class A book value against the Class B price | P/B below 0.1 and Graham Number blocked |
+| Agents reported 51% S&P volatility and 1,012% annualized returns | Agents ran the calculator on a few hand-picked prices | All metrics precomputed in Python; calculator removed from every analyst agent |
+| Reviewer flagged TTM vs fiscal-year figures as contradictions | Figures cited without their basis | Prompts require a TTM/FY label; labelled basis differences are not mismatches |
+| Health badge said STRONG while profits fell (TSLA) | Rule ignored earnings | STRONG requires growing earnings as well |
+| Share-class tickers rejected (BRK-B) | Validation allowed letters only | Share classes accepted; storage still rejects unsafe names |
+| Indian companies sized in dollars | Rupee market caps compared with dollar thresholds | Rupee thresholds for Indian stocks |
 | CI had never passed | Formatting issues; 84 known dependency vulnerabilities | Fixed formatting; upgraded lockfile (80 fixed, 4 unpatched advisories in an unused dependency documented in CI) |
 
 Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies. Missing values show plain N/A (no "N/Ax"), data-quality issues name the failing check, sentiment is downgraded after heavy underperformance, market cap falls back to non-diluted cap when missing, and Google Trends retries with the common company name.
 
-**Quality gates:** 287 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+**Quality gates:** 310 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
 
 ## Make commands
 
