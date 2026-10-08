@@ -120,6 +120,7 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 | Risk metrics badly wrong (199% annualized return) | Agents saw only 60 of 251 price rows | Metrics computed in Python from full data, passed as verified facts |
 | Final verdict copied a hard-coded rule | Code-generated verdict was injected into the advisor's prompt | Filtered out; advisor reasons from the analysts' findings |
 | Data-quality gate changed run to run; card showed "10 missing" files | LLM evaluating fixed rules; a regex parsed the word "All" as a ticker | Replaced the agent with a deterministic, unit-tested Python report (17 rules) |
+| Verdict card always showed HOLD, even when the advisor said BUY | A hard-coded `VERDICT: HOLD` line in the facts was read before the advisor's real verdict | Removed the hard-coded line; the card now shows the advisor's verdict |
 | Analyst consensus percentages summed to 78-119% | LLM doing the division | Computed in Python |
 | Mixed-basis figures (OCF labeled as FCF; fiscal-year vs latest-quarter growth; D/E; beta) | Missing labels and basis | Corrected labels; basis notes in the facts |
 | Google Trends always failed | pytrends uses an option removed in urllib3 v2 | Own retry loop; region now matches the stock's market (was always India) |
