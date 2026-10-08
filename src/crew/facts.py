@@ -676,6 +676,77 @@ def _sentiment_facts(
     return "\n".join(lines)
 
 
+def _index_name(symbol: str) -> str:
+    return "NIFTY 50" if is_indian_symbol(symbol) else "S&P 500"
+
+
+def _analyst_mix(recs: pd.DataFrame | None) -> tuple[float, float, int]:
+    """(buy %, sell %, analyst count) from the latest recommendations row."""
+    if recs is None or recs.empty:
+        return 0.0, 0.0, 0
+    latest = recs.iloc[0]
+
+    def count(key: str) -> int:
+        value = pd.to_numeric(latest.get(key, 0), errors="coerce")
+        return 0 if pd.isna(value) else int(value)
+
+    buy = count("strongBuy") + count("buy")
+    sell = count("sell") + count("strongSell")
+    total = buy + count("hold") + sell
+    if total == 0:
+        return 0.0, 0.0, 0
+    return 100 * buy / total, 100 * sell / total, total
+
+
+def _mini_screener(
+    row: pd.Series, sp: np.ndarray, mp: np.ndarray, recs: pd.DataFrame | None
+) -> str:
+    """One-line screener computed from the stock's own data."""
+    pe = _f(row, "trailingPE")
+    pb = _f(row, "priceToBook")
+    if pe is None or pe <= 0:
+        valuation = "N/A"
+    elif pe > 25 or (pb is not None and pb > 3):
+        valuation = "Rich"
+    elif pe > 15:
+        valuation = "Fair"
+    else:
+        valuation = "Low"
+
+    momentum = "N/A"
+    risk = "N/A"
+    if len(sp) >= 3:
+        stock_return = (sp[-1] - sp[0]) / sp[0]
+        if len(mp) >= 3:
+            gap = stock_return - (mp[-1] - mp[0]) / mp[0]
+            momentum = "Strong" if gap > 0.05 else "Weak" if gap < -0.05 else "In line"
+        else:
+            momentum = "Positive" if stock_return >= 0 else "Negative"
+        vol = float(np.std(np.diff(sp) / sp[:-1], ddof=1) * np.sqrt(252))
+        peak = np.maximum.accumulate(sp)
+        mdd = float(np.min((sp - peak) / peak))
+        # Same thresholds as the performance insight, so the two never disagree.
+        if vol > 0.35 or mdd < -0.30:
+            risk = "High"
+        elif vol >= 0.20 or mdd < -0.15:
+            risk = "Moderate"
+        else:
+            risk = "Low"
+
+    buy_pct, sell_pct, total = _analyst_mix(recs)
+    if total == 0:
+        sentiment = "N/A"
+    elif buy_pct >= 70:
+        sentiment = "Bullish"
+    elif sell_pct >= 30:
+        sentiment = "Bearish"
+    elif buy_pct >= 50:
+        sentiment = "Constructive"
+    else:
+        sentiment = "Mixed"
+    return f"Valuation={valuation} | Momentum={momentum} | Risk={risk} | Sentiment={sentiment}"
+
+
 def _company_basics_facts(
     row: pd.Series,
     symbol: str,
@@ -720,8 +791,8 @@ def _company_basics_facts(
             _quick_answers(row, prices, market),
             "",
             "MARKET PULSE",
-            f"Mini Screener: Valuation=Watch | Momentum=Positive | Risk=Moderate | Sentiment=Constructive",
-            f"Ticker Tape: {symbol} {_fmt_num(_f(row, 'currentPrice'), prefix=cur)} ({stock_change}) | S&P 500 ({market_change}) [cached]",
+            f"Mini Screener: {_mini_screener(row, sp, mp, recs)}",
+            f"Ticker Tape: {symbol} {_fmt_num(_f(row, 'currentPrice'), prefix=cur)} ({stock_change}) | {_index_name(symbol)} ({market_change}) [cached]",
         ]
     )
     return "\n".join(lines)
