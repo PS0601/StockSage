@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from src.core.config.data_contracts import (
+    CSV_BALANCE_SHEET,
     CSV_CASH_FLOW,
     CSV_COMPANY_INFO,
     CSV_HISTORICAL_PRICES,
@@ -28,6 +29,7 @@ def build_task_facts(symbol: str) -> dict[str, str]:
     market = _read_csv(sym, CSV_MARKET_INDEX)
     income = _read_csv(sym, CSV_INCOME_STATEMENT)
     cash = _read_csv(sym, CSV_CASH_FLOW)
+    balance = _read_csv(sym, CSV_BALANCE_SHEET)
     recs = _read_csv(sym, CSV_RECOMMENDATIONS)
     holders = _read_csv(sym, CSV_INSTITUTIONAL_HOLDERS)
     news = _read_csv(sym, CSV_NEWS)
@@ -39,7 +41,7 @@ def build_task_facts(symbol: str) -> dict[str, str]:
     facts: dict[str, str] = {}
     facts["analyze_valuation_ratios"] = _valuation_facts(company_row, cash, sym)
     facts["analyze_price_performance"] = _performance_facts(prices, market)
-    facts["analyze_financial_health"] = _financial_health_facts(company_row, income, cash)
+    facts["analyze_financial_health"] = _financial_health_facts(company_row, income, cash, balance)
     facts["analyze_market_sentiment"] = _sentiment_facts(recs, holders, news)
     facts["generate_investment_report"] = _company_basics_facts(
         company_row, sym, recs, holders, prices, market
@@ -402,8 +404,34 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
     return "\n".join(lines)
 
 
+def _debt_to_equity_by_year(balance: pd.DataFrame | None) -> list[str]:
+    """Debt/Equity for the two latest fiscal years, both from the balance sheet."""
+    if balance is None or balance.empty or balance.shape[1] < 3:
+        return []
+    labels = balance.iloc[:, 0].astype(str).str.strip()
+    debt = balance[labels == "Total Debt"]
+    equity = balance[labels == "Stockholders Equity"]
+    if debt.empty or equity.empty:
+        return []
+    lines = []
+    for col in balance.columns[1:3]:
+        d = pd.to_numeric(debt.iloc[0][col], errors="coerce")
+        e = pd.to_numeric(equity.iloc[0][col], errors="coerce")
+        if pd.notna(d) and pd.notna(e) and e > 0:
+            lines.append(f"Debt/Equity FY{str(col)[:4]} (balance sheet): {d / e:.2f}x")
+    if lines:
+        lines.append(
+            "Debt/Equity Basis: the plain 'Debt/Equity' value is Yahoo's latest-quarter "
+            "figure in percent (e.g. 78 means 0.78x). Compare fiscal years only with each other."
+        )
+    return lines
+
+
 def _financial_health_facts(
-    row: pd.Series, income: pd.DataFrame | None, cash: pd.DataFrame | None
+    row: pd.Series,
+    income: pd.DataFrame | None,
+    cash: pd.DataFrame | None,
+    balance: pd.DataFrame | None = None,
 ) -> str:
     rev_growth = _f(row, "revenueGrowth")
     earn_growth = _f(row, "earningsGrowth")
@@ -442,6 +470,7 @@ def _financial_health_facts(
         "Growth Basis: Revenue/Earnings Growth Rate = latest quarter vs same quarter "
         "a year earlier; Revenue YoY = full fiscal year vs prior fiscal year"
     )
+    lines.extend(_debt_to_equity_by_year(balance))
     if rev_growth is not None:
         lines.append(f"Revenue Growth Rate: {_fmt_num(rev_growth * 100, '%')}")
     if earn_growth is not None:
