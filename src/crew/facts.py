@@ -389,6 +389,9 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
         f"Max Drawdown (%): {_fmt_num(mdd * 100, '%')}",
         f"Beta (vs market): {_fmt_num(beta, 'x')}",
         f"Sharpe Ratio: {sharpe}",
+        "Risk Metric Basis: Beta above is computed from 1 year of daily prices vs the "
+        "market index; Yahoo's company_info beta uses 5 years of monthly data, so the "
+        "two differ by method, not error. Use the Beta above.",
         f"Market Total Return (%): {_fmt_num(market_total * 100, '%') if market_total is not None else 'N/A'}",
         f"Performance Badge: {perf_badge}",
     ]
