@@ -824,7 +824,8 @@ def _company_basics_facts(
     market: pd.DataFrame | None,
 ) -> str:
     name = _s(row, "longName") or _s(row, "shortName") or symbol
-    mcap = _f(row, "marketCap")
+    # Some markets (e.g. NSE) lack marketCap; nonDilutedMarketCap is the closest substitute.
+    mcap = _f(row, "marketCap") or _f(row, "nonDilutedMarketCap")
     cur = _currency_prefix(symbol)
     lines = [
         "COMPANY BASICS:",
