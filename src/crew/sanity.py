@@ -139,6 +139,22 @@ def _company_type(row: pd.Series) -> str:
     return "Non-Financial"
 
 
+def _file_level_issue(check: str, evidence: str) -> str:
+    """Format an issue as "<file>.csv -> <check>: <detail>" (the schema's file-level contract).
+
+    Evidence looks like "company_info.trailingEps -> negative (-2.55)" or
+    "dividends.csv -> 0 payments on record".
+    """
+    source, _, issue = evidence.partition(" -> ")
+    if source.endswith(".csv"):
+        file_name, field = source, ""
+    else:
+        file_part, _, field = source.partition(".")
+        file_name = f"{file_part}.csv"
+    detail = f"{field} {issue}".strip()
+    return f"{file_name} -> {check}: {detail}"
+
+
 def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     """Run every data-sanity rule for ``symbol`` and return the full report."""
     sym = symbol.upper()
@@ -204,8 +220,8 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
             "company_type": _company_type(row),
             "validated_files": validated,
             "missing_or_invalid_files": missing,
-            "critical_issues": [f"{i.name}: {e}" for i in hard for e in i.evidence],
-            "warnings": [f"{i.name}: {e}" for i in soft for e in i.evidence],
+            "critical_issues": [_file_level_issue(i.name, e) for i in hard for e in i.evidence],
+            "warnings": [_file_level_issue(i.name, e) for i in soft for e in i.evidence],
             "ratio_applicability": [i.model_dump() for i in ratios],
             "valuation_model_applicability": [i.model_dump() for i in models],
         }

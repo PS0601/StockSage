@@ -165,3 +165,11 @@ def test_mask_blocked_metrics_hides_only_blocked_values(data_dir: Path) -> None:
     assert "P/E Ratio: N/A" in masked
     assert "P/S Ratio: 3.00x" in masked
     assert "PEG Ratio: 1.20x" in masked
+
+
+def test_warnings_keep_the_check_name(data_dir: Path) -> None:
+    _write_dataset(data_dir, company={"trailingEps": -2.0})
+    report = build_data_sanity_report("TEST")
+
+    assert any("PE Ratio" in w for w in report.warnings)
+    assert not any(w.startswith("general") for w in report.warnings)
