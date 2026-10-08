@@ -207,15 +207,15 @@ def test_cashflow_desc_none():
 
 
 def test_health_status_strong():
-    assert _health_status(0.10, 50.0, 1_000_000.0) == "STRONG"
+    assert _health_status(0.10, 50.0, 1_000_000.0, 0.20) == "STRONG"
 
 
 def test_health_status_stable():
-    assert _health_status(0.10, 50.0, None) == "STABLE"
+    assert _health_status(0.10, 50.0, None, 0.20) == "STABLE"
 
 
 def test_health_status_mixed():
-    assert _health_status(0.10, None, None) == "MIXED"
+    assert _health_status(0.10, None, None, 0.20) == "MIXED"
 
 
 def test_health_status_weak():

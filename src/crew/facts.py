@@ -225,7 +225,14 @@ def _cashflow_desc(ocf: float | None) -> str:
     return "Cash flow needs improvement"
 
 
-def _health_status(rev_growth: float | None, de_ratio: float | None, ocf: float | None) -> str:
+def _health_status(
+    rev_growth: float | None,
+    de_ratio: float | None,
+    ocf: float | None,
+    earn_growth: float | None = None,
+) -> str:
+    """One point each for growing revenue, low leverage, positive cash flow and growing
+    earnings. STRONG requires all four, so falling profits can no longer read as STRONG."""
     score = 0
     if rev_growth is not None and rev_growth > 0.03:
         score += 1
@@ -233,11 +240,13 @@ def _health_status(rev_growth: float | None, de_ratio: float | None, ocf: float 
         score += 1
     if ocf is not None and ocf > 0:
         score += 1
-    if score >= 3:
+    if earn_growth is not None and earn_growth > 0:
+        score += 1
+    if score >= 4:
         return "STRONG"
-    if score >= 2:
+    if score >= 3:
         return "STABLE"
-    if score >= 1:
+    if score >= 2:
         return "MIXED"
     return "WEAK"
 
@@ -589,7 +598,7 @@ def _financial_health_facts(
     de_ratio = _f(row, "debtToEquity")
     ocf = _f(row, "operatingCashflow")
 
-    status = _health_status(rev_growth, de_ratio, ocf)
+    status = _health_status(rev_growth, de_ratio, ocf, earn_growth)
 
     lines = [
         "FINANCIAL HEALTH",
