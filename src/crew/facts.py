@@ -45,7 +45,9 @@ def build_task_facts(symbol: str) -> dict[str, str]:
         _performance_facts(prices, market) + f"\nMarket Index: {market_index_name(sym)}"
     )
     facts["analyze_financial_health"] = _financial_health_facts(company_row, income, cash, balance)
-    facts["analyze_market_sentiment"] = _sentiment_facts(recs, holders, news)
+    facts["analyze_market_sentiment"] = _sentiment_facts(
+        recs, holders, news, _relative_return(prices, market)
+    )
     facts["generate_investment_report"] = _company_basics_facts(
         company_row, sym, recs, holders, prices, market
     )
@@ -616,8 +618,20 @@ def _financial_health_facts(
     return "\n".join(lines)
 
 
+def _relative_return(prices: pd.DataFrame | None, market: pd.DataFrame | None) -> float | None:
+    """Stock's total return minus the market's over the same period (fraction)."""
+    sp = _series_close(prices)
+    mp = _series_close(market)
+    if len(sp) < 3 or len(mp) < 3:
+        return None
+    return float((sp[-1] - sp[0]) / sp[0] - (mp[-1] - mp[0]) / mp[0])
+
+
 def _sentiment_facts(
-    recs: pd.DataFrame | None, holders: pd.DataFrame | None, news: pd.DataFrame | None
+    recs: pd.DataFrame | None,
+    holders: pd.DataFrame | None,
+    news: pd.DataFrame | None,
+    relative_return: float | None = None,
 ) -> str:
     lines = ["SENTIMENT & ANALYST SUMMARY"]
     insight = "No analyst ratings are available."
@@ -641,6 +655,16 @@ def _sentiment_facts(
             signal = "Positive"
         elif sell_count > buy_count + h:
             signal = "Negative"
+        # Analysts can lag the tape: downgrade one step after heavy underperformance.
+        note = ""
+        if relative_return is not None and relative_return < -0.15:
+            downgraded = {"Positive": "Neutral", "Neutral": "Negative"}.get(signal, signal)
+            if downgraded != signal:
+                note = (
+                    f"Sentiment Signal Note: downgraded from {signal} because the stock "
+                    f"trailed the market by {abs(relative_return) * 100:.1f} points over the year"
+                )
+                signal = downgraded
         lines.extend(
             [
                 f"Analyst Consensus: Buy {buy_count} | Hold {h} | Sell {sell_count} ({total} analysts)",
@@ -648,6 +672,8 @@ def _sentiment_facts(
                 f"Sentiment Signal: {signal}",
             ]
         )
+        if note:
+            lines.append(note)
 
     lines.extend(["", "OWNERSHIP"])
     if holders is not None and not holders.empty and "Holder" in holders.columns:
