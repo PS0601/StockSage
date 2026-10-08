@@ -33,6 +33,9 @@ class StockDataFetcher:
     def fetch_price_history(self) -> PriceHistory:
         """Fetch OHLCV, dividends, and splits."""
         daily = self._safe_fetch(lambda: self._ticker.history(period=self._period), "price history")
+        if isinstance(daily, pd.DataFrame) and "Close" in daily.columns:
+            # Drop today's still-trading row (Yahoo returns it with NaN prices).
+            daily = daily.dropna(subset=["Close"])
         dividends = self._safe_fetch(lambda: self._ticker.dividends, "dividends")
         splits = self._safe_fetch(lambda: self._ticker.splits, "splits")
 

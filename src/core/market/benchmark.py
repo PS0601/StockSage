@@ -55,6 +55,9 @@ class BenchmarkFetcher:
         try:
             df = yf.Ticker(ticker).history(period=self._period)
             if df is not None and not df.empty:
+                # Drop today's still-trading row (Yahoo returns it with NaN prices).
+                if "Close" in df.columns:
+                    df = df.dropna(subset=["Close"])
                 return df
         except Exception as e:
             logger.warning("Failed to fetch %s (%s): %s", name, ticker, e)
