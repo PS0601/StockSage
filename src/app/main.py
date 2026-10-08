@@ -2,6 +2,7 @@
 """FastAPI application for StockSage UI."""
 
 import asyncio
+import html
 import json
 import logging
 import time
@@ -145,7 +146,9 @@ async def stream_logs(symbol: str):
                 log_entry.stage == ProcessingStage.COMPLETE
                 and log_entry.status_type == StatusType.FAILED
             ):
-                yield f"event: stream_error\ndata: {_public_error_message(symbol)}\n\n"
+                # Show the real reason (e.g. "No price data"); escaped because it may echo user input.
+                reason = html.escape(" ".join((log_entry.message or "").split()))
+                yield f"event: stream_error\ndata: {reason or _public_error_message(symbol)}\n\n"
                 error_occurred = True
                 break
 

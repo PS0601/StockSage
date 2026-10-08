@@ -366,13 +366,19 @@ def _performance_insight(
     return f"{head}, {tail}."
 
 
-def _health_insight(ocf: float | None, de_ratio: float | None) -> str:
+def _financial_prefix(row: pd.Series) -> str:
+    """Currency symbol for financial-statement values (can differ from the price currency)."""
+    code = _s(row, "financialCurrency").upper()
+    return {"USD": "$", "INR": "\u20b9"}.get(code, f"{code} " if code else "$")
+
+
+def _health_insight(ocf: float | None, de_ratio: float | None, prefix: str = "$") -> str:
     if ocf is None:
         cash = "Operating cash flow data is unavailable"
     elif ocf < 0:
         cash = "Operating cash flow is negative, so the business is consuming cash"
     else:
-        cash = f"Operating cash flow is positive ({_fmt_large(ocf)})"
+        cash = f"Operating cash flow is positive ({_fmt_large(ocf, prefix=prefix)})"
     if de_ratio is None:
         debt = "debt-to-equity is unavailable or not meaningful"
     elif de_ratio > 100:
@@ -630,7 +636,7 @@ def _financial_health_facts(
         _fmt_num(earn_growth * 100, "% YoY (latest quarter)") if earn_growth is not None else "N/A"
     )
     de_display = _fmt_num(de_ratio, "% ratio") if de_ratio is not None else "N/A"
-    ocf_display = _fmt_large(ocf) if ocf is not None else "N/A"
+    ocf_display = _fmt_large(ocf, prefix=_financial_prefix(row)) if ocf is not None else "N/A"
 
     lines.extend(
         [
@@ -681,7 +687,9 @@ def _financial_health_facts(
         except Exception:
             pass
 
-    lines.extend(["", "INSIGHT", f"Insight: {_health_insight(ocf, de_ratio)}"])
+    lines.extend(
+        ["", "INSIGHT", f"Insight: {_health_insight(ocf, de_ratio, _financial_prefix(row))}"]
+    )
     return "\n".join(lines)
 
 
