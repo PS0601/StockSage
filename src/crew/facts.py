@@ -418,8 +418,12 @@ def _financial_health_facts(
     ]
 
     lines.append("HEALTH_DESCRIPTIONS")
-    rg_pct = _fmt_num(rev_growth * 100, "% annually") if rev_growth is not None else "N/A"
-    eg_pct = _fmt_num(earn_growth * 100, "% annually") if earn_growth is not None else "N/A"
+    rg_pct = (
+        _fmt_num(rev_growth * 100, "% YoY (latest quarter)") if rev_growth is not None else "N/A"
+    )
+    eg_pct = (
+        _fmt_num(earn_growth * 100, "% YoY (latest quarter)") if earn_growth is not None else "N/A"
+    )
     de_display = _fmt_num(de_ratio, "% ratio") if de_ratio is not None else "N/A"
     ocf_display = _fmt_large(ocf) if ocf is not None else "N/A"
 
@@ -434,6 +438,10 @@ def _financial_health_facts(
 
     lines.append("")
     lines.append("FINANCIAL METRICS")
+    lines.append(
+        "Growth Basis: Revenue/Earnings Growth Rate = latest quarter vs same quarter "
+        "a year earlier; Revenue YoY = full fiscal year vs prior fiscal year"
+    )
     if rev_growth is not None:
         lines.append(f"Revenue Growth Rate: {_fmt_num(rev_growth * 100, '%')}")
     if earn_growth is not None:
