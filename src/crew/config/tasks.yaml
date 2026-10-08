@@ -70,6 +70,10 @@ analyze_valuation_ratios:
     Use these exact values in your output. If any step above asks you to compute a metric
     listed here, use the verified value instead of recomputing it or estimating it.
     Your job is to interpret what these numbers mean for {symbol}.
+    BASIS RULE: ratios, margins, growth rates and Operating Cash Flow in the verified facts are
+    Yahoo trailing-twelve-month (TTM) or latest-quarter values; figures read from the annual
+    statements are fiscal-year (FY). Label the basis whenever you cite a figure, for example
+    "gross margin 48.65% (TTM)" or "gross margin 46.91% (FY2025)".
   expected_output: >
     JSON with: summary (valuation stance), metrics (up to 5 with actual numbers and comparisons),
     implications (up to 4 pricing conclusions), citations.
@@ -147,6 +151,10 @@ analyze_price_performance:
     Use these exact values in your output. If any step above asks you to compute a metric
     listed here, use the verified value instead of recomputing it or estimating it.
     Your job is to interpret what these numbers mean for {symbol}.
+    BASIS RULE: ratios, margins, growth rates and Operating Cash Flow in the verified facts are
+    Yahoo trailing-twelve-month (TTM) or latest-quarter values; figures read from the annual
+    statements are fiscal-year (FY). Label the basis whenever you cite a figure, for example
+    "gross margin 48.65% (TTM)" or "gross margin 46.91% (FY2025)".
   expected_output: >
     JSON with: summary (return + risk profile), metrics (up to 5 computed values with comparisons),
     risk_notes (up to 3 with actual numbers), citations.
@@ -223,6 +231,10 @@ analyze_financial_health:
     Use these exact values in your output. If any step above asks you to compute a metric
     listed here, use the verified value instead of recomputing it or estimating it.
     Your job is to interpret what these numbers mean for {symbol}.
+    BASIS RULE: ratios, margins, growth rates and Operating Cash Flow in the verified facts are
+    Yahoo trailing-twelve-month (TTM) or latest-quarter values; figures read from the annual
+    statements are fiscal-year (FY). Label the basis whenever you cite a figure, for example
+    "gross margin 48.65% (TTM)" or "gross margin 46.91% (FY2025)".
   expected_output: >
     JSON with: summary (health direction with evidence), metrics (up to 5 with actual numbers),
     growth_signals (up to 3 with data), caution_signals (up to 3 with data), citations.
@@ -291,6 +303,10 @@ analyze_market_sentiment:
     Use these exact values in your output. If any step above asks you to compute a metric
     listed here, use the verified value instead of recomputing it or estimating it.
     Your job is to interpret what these numbers mean for {symbol}.
+    BASIS RULE: ratios, margins, growth rates and Operating Cash Flow in the verified facts are
+    Yahoo trailing-twelve-month (TTM) or latest-quarter values; figures read from the annual
+    statements are fiscal-year (FY). Label the basis whenever you cite a figure, for example
+    "gross margin 48.65% (TTM)" or "gross margin 46.91% (FY2025)".
   expected_output: >
     JSON with: summary (expectation state with data), sentiment_signal, analyst_consensus (with numbers),
     key_points (up to 4 data-backed), news (up to 5), citations.
@@ -337,6 +353,8 @@ review_analysis:
     IMPORTANT:
     - Return ONLY a valid JSON object. No markdown fences.
     - Only flag MATERIAL issues — not style differences.
+    - The same metric on a TTM basis and on a fiscal-year (FY) basis is NOT a mismatch when each
+      is labelled; only flag different values on the same basis, or figures with no basis.
     - Do NOT add new analysis or valuation opinions.
   expected_output: >
     JSON with: summary, confidence_adjustment, data_accuracy, watchouts, confirmed_findings.
