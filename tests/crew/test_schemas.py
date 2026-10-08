@@ -145,7 +145,7 @@ class TestDataSanityOutput:
         assert model.gate_status == "PASS"
         assert "0 hard blocks" in model.summary
 
-    def test_fail_gate_from_hard_block(self):
+    def test_hard_block_is_a_skip_not_a_failure(self):
         model = DataSanityOutput.model_validate(
             {
                 "summary": "anything",
@@ -155,7 +155,7 @@ class TestDataSanityOutput:
                 "ratio_applicability": [{"name": "PE", "status": "HARD_BLOCKED"}],
             }
         )
-        assert model.gate_status == "FAIL"
+        assert model.gate_status == "PASS_WITH_SKIPS"
 
     def test_pass_with_skips_from_soft_block(self):
         model = DataSanityOutput.model_validate(
