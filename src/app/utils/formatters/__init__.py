@@ -27,6 +27,7 @@ from src.app.utils.formatters._shared import (
     _extract_ws_summary,
     _is_analysis_entry,
 )
+from src.app.utils.formatters._units import strip_units_after_na
 from src.app.utils.formatters._valuation import _render_valuation_card
 
 _RENDERERS = {
@@ -52,7 +53,8 @@ def _format_analysis_block(log_entry: LogEntry) -> str:
 
     renderer = _RENDERERS.get(substage_val)
     if renderer:
-        result = renderer(raw, symbol)
+        # Cards append units after values; a missing value must read plain N/A.
+        result = strip_units_after_na(renderer(raw, symbol))
         tag_end = result.index(">")
         return result[:tag_end] + extra_attrs + result[tag_end:]
 
