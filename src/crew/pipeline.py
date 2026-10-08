@@ -10,6 +10,7 @@ from typing import Any
 from uuid import uuid4
 
 from src.core.config.enums import ProcessingStage, StatusType, SubStage
+from src.core.config.markets import market_index_name
 from src.core.config.models import LogEntry
 from src.crew.facts import build_task_facts
 from src.crew.sanity import build_data_sanity_report, mask_blocked_metrics
@@ -65,6 +66,7 @@ def _build_crew_inputs(
     """Pass verified, code-computed metrics to the agents as task inputs."""
     inputs = {
         "symbol": symbol,
+        "market_index": market_index_name(symbol),
         "data_sanity_facts": data_sanity_text or "No data sanity results available.",
     }
     for task_name, text in facts.items():

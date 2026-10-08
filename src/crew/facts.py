@@ -20,7 +20,7 @@ from src.core.config.data_contracts import (
     CSV_RECOMMENDATIONS,
     DATA_DIR,
 )
-from src.core.config.markets import is_indian_symbol
+from src.core.config.markets import is_indian_symbol, market_index_name
 
 
 def build_task_facts(symbol: str) -> dict[str, str]:
@@ -41,7 +41,9 @@ def build_task_facts(symbol: str) -> dict[str, str]:
 
     facts: dict[str, str] = {}
     facts["analyze_valuation_ratios"] = _valuation_facts(company_row, cash, sym)
-    facts["analyze_price_performance"] = _performance_facts(prices, market)
+    facts["analyze_price_performance"] = (
+        _performance_facts(prices, market) + f"\nMarket Index: {market_index_name(sym)}"
+    )
     facts["analyze_financial_health"] = _financial_health_facts(company_row, income, cash, balance)
     facts["analyze_market_sentiment"] = _sentiment_facts(recs, holders, news)
     facts["generate_investment_report"] = _company_basics_facts(
@@ -677,7 +679,7 @@ def _sentiment_facts(
 
 
 def _index_name(symbol: str) -> str:
-    return "NIFTY 50" if is_indian_symbol(symbol) else "S&P 500"
+    return market_index_name(symbol)
 
 
 def _analyst_mix(recs: pd.DataFrame | None) -> tuple[float, float, int]:

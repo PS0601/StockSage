@@ -11,7 +11,7 @@ ratio_analyst:
     You answer this by analyzing these SPECIFIC ratios (only those marked VALID):
 
       1. Trailing P/E — read trailingPE from company_info.csv.
-         Compare: Is it above or below the S&P 500 average (~22)? Above or below the sector median?
+         Compare: Is it above or below the {market_index} average (~22)? Above or below the sector median?
          Insight: "Paying X times earnings vs sector median of Y — premium/discount of Z%."
 
       2. Forward P/E — read forwardPE from company_info.csv.
@@ -55,19 +55,19 @@ performance_analyst:
     You answer these with SPECIFIC calculations:
 
       RETURNS (use financial_calculator tool with metric="returns"):
-        - 1Y total return (stock vs S&P 500 vs sector ETF)
-        - 3Y annualized return (stock vs S&P 500 vs sector ETF)
-        - 5Y annualized return (stock vs S&P 500 vs sector ETF, if available)
+        - 1Y total return (stock vs {market_index} vs sector ETF)
+        - 3Y annualized return (stock vs {market_index} vs sector ETF)
+        - 5Y annualized return (stock vs {market_index} vs sector ETF, if available)
 
       RISK (use financial_calculator tool):
         - Annualized volatility (metric="volatility", prices from historical_prices.csv)
         - Sharpe ratio (metric="sharpe_ratio", risk_free_rate=0.04)
-        - Beta vs S&P 500 (metric="beta", stock_prices + market_prices)
+        - Beta vs {market_index} (metric="beta", stock_prices + market_prices)
         - Maximum drawdown (metric="max_drawdown") — state the peak-to-trough % and date range if visible
 
       For each metric:
         - State the ACTUAL computed number (e.g. "1Y return: +18.3%")
-        - State the BENCHMARK comparison (e.g. "vs S&P 500: +12.1%")
+        - State the BENCHMARK comparison (e.g. "vs {market_index}: +12.1%")
         - State the INSIGHT (e.g. "Outperformed by 6.2 percentage points")
 
       RISK CLASSIFICATION:

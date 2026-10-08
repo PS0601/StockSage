@@ -102,7 +102,8 @@ def _render_performance_card(raw: str, symbol: str) -> str:  # noqa: ARG001
 
     comparison = ""
     if total_return and market_return:
-        comparison = f"{_esc(total_return)}% over the past year vs. {_esc(market_return)}% for the S&amp;P 500 (market index)"
+        index_name = _parse_kv(raw, "Market Index") or "S&P 500"
+        comparison = f"{_esc(total_return)}% over the past year vs. {_esc(market_return)}% for the {_esc(index_name)} (market index)"
 
     tr_sign = "+" if _is_pos(total_return) else ""
     ar_sign = "+" if _is_pos(annualized) else ""

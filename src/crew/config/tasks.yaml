@@ -24,7 +24,7 @@ analyze_valuation_ratios:
       For each ratio, answer: "Is {symbol} expensive or cheap on this metric?"
 
       Trailing P/E (trailingPE from CSV):
-        Compare vs S&P 500 average (~22x) and sector median (look up from context).
+        Compare vs {market_index} average (~22x) and sector median (look up from context).
         State: "{symbol} PE of X vs sector median Y — Z% premium/discount."
 
       Forward P/E (forwardPE from CSV):
@@ -111,8 +111,8 @@ analyze_price_performance:
       For each metric, state the actual number + what it means for THIS stock:
 
       Returns:
-        "1Y return: +18.3% vs S&P 500 +12.1% — outperformed by 6.2pp"
-        "3Y annualized: +14.5% vs S&P 500 +10.8% — consistent outperformance"
+        "1Y return: +18.3% vs {market_index} +12.1% — outperformed by 6.2pp"
+        "3Y annualized: +14.5% vs {market_index} +10.8% — consistent outperformance"
 
       Volatility:
         "Annualized vol: 28.4% vs market 17.2% — 65% more volatile than market"
@@ -132,7 +132,7 @@ analyze_price_performance:
         High: beta > 1.2, max drawdown > 30%, vol significantly above market
 
     OUTPUT FORMAT:
-    - "summary": one sentence. Example: "AAPL returned +18.3% over 1Y, outperforming S&P 500 by 6pp with moderate drawdown risk."
+    - "summary": one sentence. Example: "AAPL returned +18.3% over 1Y, outperforming {market_index} by 6pp with moderate drawdown risk."
     - "metrics": up to 5 MetricItem (label, value=actual number, note=comparison insight, source=csv file).
     - "risk_notes": up to 3 risk observations with actual numbers.
     - "citations": sources.
