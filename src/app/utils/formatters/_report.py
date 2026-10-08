@@ -139,7 +139,7 @@ def _render_report_cards(raw: str, symbol: str) -> str:
             {icon}
             <span class="px-2 py-0.5 rounded text-xs font-bold {bcls}">{_esc(badge)}</span>
           </div>
-          <p class="text-xs text-gray-500 leading-relaxed">{_esc(desc) if desc else "<!-- TODO: Quick answer description not available -->"}</p>
+          <p class="text-xs text-gray-500 leading-relaxed">{_esc(desc) if desc else ""}</p>
         </div>"""
 
     quick_answers = f"""
@@ -151,10 +151,10 @@ def _render_report_cards(raw: str, symbol: str) -> str:
       </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
-      {_qa_card("Is this a good business?", "Good Business", "Mixed", "<!-- TODO: Derive from revenue/profit growth -->")}
-      {_qa_card("Is the company financially healthy?", "Financially Healthy", "Yes", "<!-- TODO: Derive from debt/cash metrics -->")}
-      {_qa_card("Is the stock risky?", "Stock Risky", "Moderate", "<!-- TODO: Derive from volatility -->")}
-      {_qa_card("Is it expensive right now?", "Expensive", "Fair", "<!-- TODO: Derive from P/E ratios -->")}
+      {_qa_card("Is this a good business?", "Good Business", "N/A", "Not enough data to answer.")}
+      {_qa_card("Is the company financially healthy?", "Financially Healthy", "N/A", "Not enough data to answer.")}
+      {_qa_card("Is the stock risky?", "Stock Risky", "N/A", "Not enough data to answer.")}
+      {_qa_card("Is it expensive right now?", "Expensive", "N/A", "Not enough data to answer.")}
     </div>
     """
 
