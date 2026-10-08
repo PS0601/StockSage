@@ -144,7 +144,7 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 
 Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies. Missing values show plain N/A (no "N/Ax"), data-quality issues name the failing check, sentiment is downgraded after heavy underperformance, market cap falls back to non-diluted cap when missing, and Google Trends retries with the common company name.
 
-**Quality gates:** 310 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+**Quality gates:** 312 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
 
 ## Make commands
 
