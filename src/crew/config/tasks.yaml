@@ -282,7 +282,7 @@ analyze_market_sentiment:
     - analyst_consensus MUST include actual % or count numbers, not just "bullish."
     - Every key_point must reference specific data.
     - Do NOT provide investment advice or recommendations.
-    - Use the analyst counts from the VERIFIED FACTS below for the most recent period. Buy%, Hold% and Sell% must add up to 100%.
+    - Copy the analyst counts AND percentages exactly from the VERIFIED FACTS below. Do NOT recompute the percentages.
 
     VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
     {analyze_market_sentiment_facts}

@@ -486,6 +486,10 @@ def _sentiment_facts(
         buy_count = sb + b
         sell_count = s + ss
         total = sb + b + h + s + ss
+        # Hold is derived from the other two so the three always sum to exactly 100%.
+        buy_pct = round(100 * buy_count / total, 1) if total else 0.0
+        sell_pct = round(100 * sell_count / total, 1) if total else 0.0
+        hold_pct = round(100 - buy_pct - sell_pct, 1) if total else 0.0
         signal = "Neutral"
         if buy_count > sell_count + h:
             signal = "Positive"
@@ -494,6 +498,7 @@ def _sentiment_facts(
         lines.extend(
             [
                 f"Analyst Consensus: Buy {buy_count} | Hold {h} | Sell {sell_count} ({total} analysts)",
+                f"Analyst Consensus (%): Buy {buy_pct:.1f}% | Hold {hold_pct:.1f}% | Sell {sell_pct:.1f}%",
                 f"Sentiment Signal: {signal}",
             ]
         )
