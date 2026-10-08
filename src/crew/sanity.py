@@ -172,6 +172,31 @@ def _not_applicable_for_banks(item: ApplicabilityItem) -> ApplicabilityItem:
     )
 
 
+# Ratios that divide a price-based value by a financial-statement value. They are
+# meaningless when Yahoo reports the price and the financials in different currencies
+# (e.g. INFY.NS: price in INR, financials in USD).
+_CURRENCY_SENSITIVE = {"P/S Ratio", "EV/EBITDA"}
+
+
+def _text(row: object, key: str) -> str:
+    value = row.get(key) if hasattr(row, "get") else None  # type: ignore[union-attr]
+    text = "" if value is None else str(value).strip()
+    return "" if text.lower() in ("", "nan", "none") else text
+
+
+def _block_for_currency_mismatch(
+    item: ApplicabilityItem, price_ccy: str, fin_ccy: str
+) -> ApplicabilityItem:
+    if item.name not in _CURRENCY_SENSITIVE or item.status != "VALID":
+        return item
+    return ApplicabilityItem(
+        name=item.name,
+        status="SOFT_BLOCKED",
+        reason=f"Price in {price_ccy} but financials in {fin_ccy}; the ratio mixes currencies",
+        evidence=[f"company_info.financialCurrency -> {fin_ccy} vs price currency {price_ccy}"],
+    )
+
+
 def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     """Run every data-sanity rule for ``symbol`` and return the full report."""
     sym = symbol.upper()
@@ -220,6 +245,11 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     if company_type == "Bank":
         ratios = [_not_applicable_for_banks(i) for i in ratios]
         models = [_not_applicable_for_banks(i) for i in models]
+
+    price_ccy = _text(row, "currency")
+    fin_ccy = _text(row, "financialCurrency")
+    if price_ccy and fin_ccy and price_ccy != fin_ccy:
+        ratios = [_block_for_currency_mismatch(i, price_ccy, fin_ccy) for i in ratios]
 
     items = [*ratios, *models]
     hard = [item for item in items if item.status == "HARD_BLOCKED"]

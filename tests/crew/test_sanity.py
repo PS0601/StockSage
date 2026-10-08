@@ -200,3 +200,19 @@ def test_missing_optional_file_does_not_fail_the_gate(data_dir: Path) -> None:
     report = build_data_sanity_report("TEST")
 
     assert report.gate_status == "PASS"
+
+
+def test_currency_mismatch_blocks_price_to_financials_ratios(data_dir: Path) -> None:
+    _write_dataset(data_dir, company={"currency": "INR", "financialCurrency": "USD"})
+    report = build_data_sanity_report("TEST")
+
+    assert _status(report, "P/S Ratio") == "SOFT_BLOCKED"
+    assert _status(report, "EV/EBITDA") == "SOFT_BLOCKED"
+    assert _status(report, "PE Ratio") == "VALID"
+
+
+def test_matching_currencies_keep_ratios_valid(data_dir: Path) -> None:
+    _write_dataset(data_dir, company={"currency": "INR", "financialCurrency": "INR"})
+    report = build_data_sanity_report("TEST")
+
+    assert _status(report, "P/S Ratio") == "VALID"
