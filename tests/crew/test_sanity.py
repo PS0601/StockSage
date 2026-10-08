@@ -8,7 +8,7 @@ import pytest
 
 import src.core.config.data_contracts as data_contracts
 import src.crew.facts as facts
-from src.crew.sanity import build_data_sanity_report
+from src.crew.sanity import build_data_sanity_report, mask_blocked_metrics
 from src.crew.schemas._constants import DATA_SANITY_REQUIRED_FILES
 
 HEALTHY_COMPANY = {
@@ -153,3 +153,15 @@ def test_indian_symbol_sets_market_context(data_dir: Path) -> None:
     report = build_data_sanity_report("TEST.NS")
 
     assert report.market_context == "India"
+
+
+def test_mask_blocked_metrics_hides_only_blocked_values(data_dir: Path) -> None:
+    _write_dataset(data_dir, company={"trailingEps": -2.0})
+    report = build_data_sanity_report("TEST")
+    facts = "P/E Ratio: -5.00x\nP/S Ratio: 3.00x\nPEG Ratio: 1.20x"
+
+    masked = mask_blocked_metrics(facts, report)
+
+    assert "P/E Ratio: N/A" in masked
+    assert "P/S Ratio: 3.00x" in masked
+    assert "PEG Ratio: 1.20x" in masked

@@ -12,7 +12,7 @@ from uuid import uuid4
 from src.core.config.enums import ProcessingStage, StatusType, SubStage
 from src.core.config.models import LogEntry
 from src.crew.facts import build_task_facts
-from src.crew.sanity import build_data_sanity_report
+from src.crew.sanity import build_data_sanity_report, mask_blocked_metrics
 from src.crew.structured_output import (
     serialize_structured_output,
     validate_task_output,
@@ -135,8 +135,11 @@ class AnalysisPipeline:
             deterministic_facts = build_task_facts(self.symbol)
 
             # Data sanity is rule-based, so it is computed in Python, not by an agent.
-            sanity_text = serialize_structured_output(
-                "validate_data_sanity", build_data_sanity_report(self.symbol)
+            sanity_report = build_data_sanity_report(self.symbol)
+            sanity_text = serialize_structured_output("validate_data_sanity", sanity_report)
+            # Blocked ratios must not reach agents or UI cards as usable numbers.
+            deterministic_facts["analyze_valuation_ratios"] = mask_blocked_metrics(
+                deterministic_facts.get("analyze_valuation_ratios", ""), sanity_report
             )
             yield self._log(SubStage.VALIDATING_DATA_SANITY, StatusType.IN_PROGRESS)
             yield self._log(SubStage.VALIDATING_DATA_SANITY, StatusType.SUCCESS, sanity_text)

@@ -210,3 +210,35 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
             "valuation_model_applicability": [i.model_dump() for i in models],
         }
     )
+
+
+# Sanity check name -> label used in the valuation facts block.
+_FACT_LABELS = {
+    "PE Ratio": "P/E Ratio",
+    "Forward PE": "Forward P/E",
+    "P/B Ratio": "P/B Ratio",
+    "P/S Ratio": "P/S Ratio",
+    "EV/EBITDA": "EV/EBITDA",
+    "PEG Ratio": "PEG Ratio",
+    "ROE": "ROE (%)",
+    "ROA": "ROA (%)",
+    "Gross Margin": "Gross Margin (%)",
+}
+
+
+def mask_blocked_metrics(facts_text: str, report: DataSanityOutput) -> str:
+    """Replace the value of every blocked ratio in a facts block with N/A.
+
+    Blocked ratios (missing or misleading inputs) must not reach agents or UI cards
+    as if they were usable numbers.
+    """
+    blocked_labels = {
+        _FACT_LABELS[item.name]
+        for item in report.ratio_applicability
+        if item.status != "VALID" and item.name in _FACT_LABELS
+    }
+    lines = []
+    for line in facts_text.splitlines():
+        label = line.split(":", 1)[0].strip()
+        lines.append(f"{label}: N/A" if label in blocked_labels else line)
+    return "\n".join(lines)
