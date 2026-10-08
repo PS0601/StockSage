@@ -14,7 +14,7 @@ analyze_valuation_ratios:
       revenuePerShare, earningsGrowth, profitMargins, returnOnEquity, returnOnAssets,
       grossMargins, operatingMargins, beta.
 
-    STEP 2 — COMPUTE DERIVED RATIOS (use financial_calculator tool for each):
+    STEP 2 — DERIVED RATIOS (take each value from the VERIFIED FACTS; do not recompute):
       - P/B Ratio: metric="pb_ratio", price=currentPrice, book_value_per_share=bookValue
       - P/S Ratio: metric="ps_ratio", price=currentPrice, revenue_per_share=revenuePerShare
       - EV/EBITDA: metric="ev_ebitda", enterprise_value=enterpriseValue, ebitda=ebitda
@@ -191,7 +191,7 @@ analyze_financial_health:
       Total Assets, Total Debt, Stockholders Equity, Current Assets, Current Liabilities,
       Cash And Cash Equivalents.
 
-    Compute using financial_calculator:
+    Take these from the VERIFIED FACTS where listed; otherwise read them from balance_sheet.csv:
       - Debt-to-Equity: metric="debt_to_equity", total_debt=<value>, shareholders_equity=<value>
       - Current Ratio: metric="current_ratio", current_assets=<value>, current_liabilities=<value>
 

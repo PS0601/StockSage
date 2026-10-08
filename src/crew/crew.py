@@ -38,7 +38,8 @@ class StockAnalysisCrew:
     def ratio_analyst(self) -> Agent:
         return Agent(
             config=self.agents_config["ratio_analyst"],
-            tools=[self.csv_reader, self.calculator],
+            # Metrics are precomputed in facts.py; no calculator, so no re-derived numbers.
+            tools=[self.csv_reader],
             llm=self.llm,
             verbose=CREW_VERBOSE,
         )
@@ -58,7 +59,8 @@ class StockAnalysisCrew:
     def fundamental_analyst(self) -> Agent:
         return Agent(
             config=self.agents_config["fundamental_analyst"],
-            tools=[self.csv_reader, self.calculator],
+            # Metrics are precomputed in facts.py; no calculator, so no re-derived numbers.
+            tools=[self.csv_reader],
             llm=self.llm,
             verbose=CREW_VERBOSE,
         )
