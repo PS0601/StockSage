@@ -134,17 +134,29 @@ def _to_usd_billions(val: float | None) -> str:
     return f"${val / 1_000_000_000:.2f}B"
 
 
-def _cap_size(market_cap: float | None) -> str:
+# (minimum market cap, label). Indian stocks are quoted in rupees, so they use rupee
+# cut-offs that roughly follow AMFI's large/mid/small-cap classification.
+_US_CAP_BANDS = (
+    (200e9, "Very Large Cap"),
+    (10e9, "Large Cap"),
+    (2e9, "Mid Cap"),
+    (300e6, "Small Cap"),
+)
+_INDIA_CAP_BANDS = (
+    (5e12, "Very Large Cap"),
+    (1e12, "Large Cap"),
+    (300e9, "Mid Cap"),
+    (50e9, "Small Cap"),
+)
+
+
+def _cap_size(market_cap: float | None, symbol: str = "") -> str:
     if market_cap is None:
         return "N/A"
-    if market_cap >= 200_000_000_000:
-        return "Very Large Cap"
-    if market_cap >= 10_000_000_000:
-        return "Large Cap"
-    if market_cap >= 2_000_000_000:
-        return "Mid Cap"
-    if market_cap >= 300_000_000:
-        return "Small Cap"
+    bands = _INDIA_CAP_BANDS if is_indian_symbol(symbol) else _US_CAP_BANDS
+    for floor, label in bands:
+        if market_cap >= floor:
+            return label
     return "Micro Cap"
 
 
@@ -844,7 +856,7 @@ def _company_basics_facts(
         f"Segment: {_s(row, 'industry')}",
         f"Price: {_fmt_num(_f(row, 'currentPrice'), prefix=cur)}",
         f"Market Cap: {_fmt_large(mcap, prefix=cur)}",
-        f"Cap Size: {_cap_size(mcap)}",
+        f"Cap Size: {_cap_size(mcap, symbol)}",
     ]
 
     peers: list[str] = []
