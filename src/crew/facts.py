@@ -513,6 +513,48 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
     return "\n".join(lines)
 
 
+def _margins_by_year(income: pd.DataFrame | None) -> list[str]:
+    """Gross/operating/net margins for the two latest fiscal years, from the income statement."""
+    if income is None or income.empty or income.shape[1] < 3:
+        return []
+    labels = income.iloc[:, 0].astype(str).str.strip()
+    columns = list(income.columns[1:3])
+
+    def values(item: str) -> list[float] | None:
+        match = income[labels == item]
+        if match.empty:
+            return None
+        return [float(pd.to_numeric(match.iloc[0][c], errors="coerce")) for c in columns]
+
+    revenue = values("Total Revenue")
+    if revenue is None:
+        return []
+    years = [str(c)[:4] for c in columns]
+    lines = []
+    for label, item in (
+        ("Gross Margin", "Gross Profit"),
+        ("Operating Margin", "Operating Income"),
+        ("Net Margin", "Net Income"),
+    ):
+        numerators = values(item)
+        if numerators is None:
+            continue
+        pct = [
+            None if pd.isna(n) or pd.isna(r) or r == 0 else 100 * n / r
+            for n, r in zip(numerators, revenue)
+        ]
+        if pct[0] is None:
+            continue
+        prior = f" (FY{years[1]}: {pct[1]:.2f}%)" if pct[1] is not None else ""
+        lines.append(f"{label} FY{years[0]}: {pct[0]:.2f}%{prior}")
+    if lines:
+        lines.append(
+            "Margin Basis: fiscal-year margins from the income statement; "
+            "use these exact values instead of recomputing them."
+        )
+    return lines
+
+
 def _debt_to_equity_by_year(balance: pd.DataFrame | None) -> list[str]:
     """Debt/Equity for the two latest fiscal years, both from the balance sheet."""
     if balance is None or balance.empty or balance.shape[1] < 3:
@@ -580,6 +622,7 @@ def _financial_health_facts(
         "a year earlier; Revenue YoY = full fiscal year vs prior fiscal year"
     )
     lines.extend(_debt_to_equity_by_year(balance))
+    lines.extend(_margins_by_year(income))
     if rev_growth is not None:
         lines.append(f"Revenue Growth Rate: {_fmt_num(rev_growth * 100, '%')}")
     if earn_growth is not None:

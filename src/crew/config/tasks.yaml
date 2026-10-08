@@ -215,6 +215,8 @@ analyze_financial_health:
     - Every claim MUST include actual numbers and the CSV source.
     - State "improving", "stable", or "deteriorating" WITH the evidence, not just the label.
     - Do NOT add valuation opinions or investment recommendations.
+    - Write final statements only. Never include self-corrections or drafting notes
+      such as "wait" or "actually"; if unsure of a direction, use the verified margins.
 
     VERIFIED FACTS (computed in Python from the full dataset; these are authoritative):
     {analyze_financial_health_facts}
