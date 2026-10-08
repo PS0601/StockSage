@@ -302,6 +302,79 @@ def _quick_answers(
     return "\n".join(lines)
 
 
+def _valuation_insight(row: pd.Series) -> str:
+    pe = _f(row, "trailingPE")
+    pb = _f(row, "priceToBook")
+    peg = _f(row, "pegRatio")
+    growth = _f(row, "earningsGrowth")
+    if pe is None or pe <= 0:
+        return (
+            "No meaningful P/E (losses or missing earnings); "
+            "judge value on sales and book multiples instead."
+        )
+    if pe > 25 or (pb is not None and pb > 3):
+        if peg is not None and 0 < peg < 1 and growth is not None and growth > 0:
+            return (
+                f"Multiples look rich (P/E {pe:.1f}x), but a PEG of {peg:.2f}x "
+                "suggests earnings growth may justify them."
+            )
+        return f"Multiples look rich (P/E {pe:.1f}x); earnings growth must stay strong to justify them."
+    if pe > 15:
+        return f"Valuation looks near fair value (P/E {pe:.1f}x)."
+    return f"Multiples look low (P/E {pe:.1f}x); check whether weak growth or risk explains the discount."
+
+
+def _performance_insight(
+    total: float, market_total: float | None, vol: float, mdd: float, sharpe: float
+) -> str:
+    if market_total is None:
+        head = "No market comparison is available"
+    else:
+        gap = (total - market_total) * 100
+        word = "Outperformed" if gap >= 0 else "Underperformed"
+        head = f"{word} the market by {abs(gap):.1f} percentage points"
+    if vol > 0.35 or mdd < -0.30:
+        tail = f"with large swings ({vol * 100:.1f}% volatility, {mdd * 100:.1f}% max drawdown)"
+    elif sharpe < 0.5:
+        tail = f"while risk-adjusted returns are weak (Sharpe {sharpe:.2f})"
+    else:
+        tail = f"with solid risk-adjusted returns (Sharpe {sharpe:.2f})"
+    return f"{head}, {tail}."
+
+
+def _health_insight(ocf: float | None, de_ratio: float | None) -> str:
+    if ocf is None:
+        cash = "Operating cash flow data is unavailable"
+    elif ocf < 0:
+        cash = "Operating cash flow is negative, so the business is consuming cash"
+    else:
+        cash = f"Operating cash flow is positive ({_fmt_large(ocf)})"
+    if de_ratio is None:
+        debt = "debt-to-equity is unavailable or not meaningful"
+    elif de_ratio > 100:
+        debt = f"leverage is high (debt-to-equity {de_ratio:.0f}%)"
+    elif de_ratio > 50:
+        debt = f"leverage is moderate (debt-to-equity {de_ratio:.0f}%)"
+    else:
+        debt = f"leverage is low (debt-to-equity {de_ratio:.0f}%)"
+    return f"{cash}; {debt}."
+
+
+def _sentiment_insight(buy_pct: float, sell_pct: float, total: int) -> str:
+    if total == 0:
+        return "No analyst ratings are available."
+    if buy_pct >= 70:
+        return (
+            f"Analysts are strongly bullish ({buy_pct:.0f}% Buy); "
+            "check whether price action and insider activity agree."
+        )
+    if sell_pct >= 30:
+        return f"A sizable share of analysts rate it Sell ({sell_pct:.0f}%); sentiment is divided."
+    if buy_pct >= 50:
+        return f"Analysts lean positive ({buy_pct:.0f}% Buy), with a large Hold contingent."
+    return f"Analyst views are cautious ({buy_pct:.0f}% Buy)."
+
+
 def _valuation_verdict(row: pd.Series) -> str:
     pe = _f(row, "trailingPE")
     pb = _f(row, "priceToBook")
@@ -332,7 +405,7 @@ def _valuation_facts(row: pd.Series, cash: pd.DataFrame | None, symbol: str) -> 
         _valuation_verdict(row),
         "",
         "INSIGHT",
-        "Insight: Valuation is rich; watch earnings growth to justify current multiples.",
+        f"Insight: {_valuation_insight(row)}",
     ]
     if cash is not None and "Free Cash Flow" in cash.iloc[:, 0].values:
         try:
@@ -432,7 +505,7 @@ def _performance_facts(prices: pd.DataFrame | None, market: pd.DataFrame | None)
         [
             "",
             "INSIGHT",
-            "Insight: Risk is acceptable for growth investors if drawdowns are tolerated.",
+            "Insight: " + _performance_insight(total, market_total, vol, mdd, sharpe),
         ]
     )
     return "\n".join(lines)
@@ -537,9 +610,7 @@ def _financial_health_facts(
         except Exception:
             pass
 
-    lines.extend(
-        ["", "INSIGHT", "Insight: Balance sheet remains stable with healthy cash generation."]
-    )
+    lines.extend(["", "INSIGHT", f"Insight: {_health_insight(ocf, de_ratio)}"])
     return "\n".join(lines)
 
 
@@ -547,6 +618,7 @@ def _sentiment_facts(
     recs: pd.DataFrame | None, holders: pd.DataFrame | None, news: pd.DataFrame | None
 ) -> str:
     lines = ["SENTIMENT & ANALYST SUMMARY"]
+    insight = "No analyst ratings are available."
     if recs is not None and not recs.empty:
         latest = recs.iloc[0]
         sb = int(pd.to_numeric(latest.get("strongBuy", 0), errors="coerce") or 0)
@@ -561,6 +633,7 @@ def _sentiment_facts(
         buy_pct = round(100 * buy_count / total, 1) if total else 0.0
         sell_pct = round(100 * sell_count / total, 1) if total else 0.0
         hold_pct = round(100 - buy_pct - sell_pct, 1) if total else 0.0
+        insight = _sentiment_insight(buy_pct, sell_pct, total)
         signal = "Neutral"
         if buy_count > sell_count + h:
             signal = "Positive"
@@ -584,7 +657,7 @@ def _sentiment_facts(
         [
             "",
             "INSIGHT",
-            "Insight: Analyst positioning remains constructive, but monitor revision trend.",
+            f"Insight: {insight}",
             "",
             "RELATED NEWS",
         ]
