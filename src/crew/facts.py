@@ -72,6 +72,16 @@ def _f(row: pd.Series, key: str, default: float | None = None) -> float | None:
         return default
 
 
+def _yoy_change(current: float, previous: float) -> float:
+    """Change vs the prior period, as a fraction.
+
+    Divides by abs(previous) so the sign stays meaningful when the prior value is
+    negative (e.g. negative free cash flow): improvement is positive, deterioration
+    is negative. For positive prior values this equals the usual formula.
+    """
+    return (current - previous) / abs(previous)
+
+
 def _s(row: pd.Series, key: str, default: str = "") -> str:
     if key not in row:
         return default
@@ -492,7 +502,7 @@ def _financial_health_facts(
             revenue_row = income[income.iloc[:, 0] == "Total Revenue"].iloc[0, 1:4]
             revenue_vals = pd.to_numeric(revenue_row, errors="coerce").dropna().to_numpy()
             if len(revenue_vals) >= 2:
-                yoy = (revenue_vals[0] - revenue_vals[1]) / revenue_vals[1]
+                yoy = _yoy_change(revenue_vals[0], revenue_vals[1])
                 lines.append(f"Revenue YoY (%): {_fmt_num(float(yoy) * 100, '%')}")
         except Exception:
             pass
@@ -502,7 +512,7 @@ def _financial_health_facts(
             fcf_row = cash[cash.iloc[:, 0] == "Free Cash Flow"].iloc[0, 1:3]
             fcf_vals = pd.to_numeric(fcf_row, errors="coerce").dropna().to_numpy()
             if len(fcf_vals) >= 2 and fcf_vals[1] != 0:
-                fcf_yoy = (fcf_vals[0] - fcf_vals[1]) / fcf_vals[1]
+                fcf_yoy = _yoy_change(fcf_vals[0], fcf_vals[1])
                 lines.append(f"Free Cash Flow YoY (%): {_fmt_num(float(fcf_yoy) * 100, '%')}")
         except Exception:
             pass
