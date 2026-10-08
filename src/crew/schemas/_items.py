@@ -17,7 +17,7 @@ class ApplicabilityItem(BaseModel):
     """Ratio or valuation-model applicability entry for DataSanityOutput."""
 
     name: str = Field(min_length=1)
-    status: Literal["VALID", "SOFT_BLOCKED", "HARD_BLOCKED"]
+    status: Literal["VALID", "SOFT_BLOCKED", "HARD_BLOCKED", "NOT_APPLICABLE"]
     reason: str = ""
     evidence: list[str] = Field(default_factory=list)
 

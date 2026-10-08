@@ -105,7 +105,7 @@ def _ddm_rule(row: pd.Series, dividends: pd.DataFrame | None) -> ApplicabilityIt
         shown = "missing" if rate is None else f"{rate:g}"
         return ApplicabilityItem(
             name="DDM",
-            status="HARD_BLOCKED",
+            status="NOT_APPLICABLE",
             reason="Company pays no dividend",
             evidence=[f"company_info.dividendRate -> {shown}"],
         )
@@ -155,6 +155,22 @@ def _file_level_issue(check: str, evidence: str) -> str:
     return f"{file_name} -> {check}: {detail}"
 
 
+# Ratios and models that do not apply to banks (no cost of revenue, current
+# assets/liabilities, EBITDA or meaningful free cash flow in bank statements).
+_BANK_NOT_APPLICABLE = {"EV/EBITDA", "Current Ratio", "Gross Margin", "Operating Margin", "DCF"}
+
+
+def _not_applicable_for_banks(item: ApplicabilityItem) -> ApplicabilityItem:
+    if item.name not in _BANK_NOT_APPLICABLE:
+        return item
+    return ApplicabilityItem(
+        name=item.name,
+        status="NOT_APPLICABLE",
+        reason="Not meaningful for banks",
+        evidence=item.evidence,
+    )
+
+
 def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     """Run every data-sanity rule for ``symbol`` and return the full report."""
     sym = symbol.upper()
@@ -199,6 +215,11 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
         _rule("Relative Valuation", [ci("trailingEps")]),
     ]
 
+    company_type = _company_type(row)
+    if company_type == "Bank":
+        ratios = [_not_applicable_for_banks(i) for i in ratios]
+        models = [_not_applicable_for_banks(i) for i in models]
+
     items = [*ratios, *models]
     hard = [item for item in items if item.status == "HARD_BLOCKED"]
     soft = [item for item in items if item.status == "SOFT_BLOCKED"]
@@ -217,7 +238,7 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
             "summary": f"{len(hard)} hard blocks, {len(soft)} soft blocks identified",
             "gate_status": gate,
             "market_context": "India" if is_indian_symbol(sym) else "US",
-            "company_type": _company_type(row),
+            "company_type": company_type,
             "validated_files": validated,
             "missing_or_invalid_files": missing,
             "critical_issues": [_file_level_issue(i.name, e) for i in hard for e in i.evidence],

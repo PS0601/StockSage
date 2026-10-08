@@ -117,11 +117,12 @@ def test_missing_book_value_hard_blocks_pb(data_dir: Path) -> None:
     assert report.gate_status == "FAIL"
 
 
-def test_no_dividend_hard_blocks_ddm(data_dir: Path) -> None:
+def test_no_dividend_makes_ddm_not_applicable(data_dir: Path) -> None:
     _write_dataset(data_dir, company={"dividendRate": 0.0})
     report = build_data_sanity_report("TEST")
 
-    assert _status(report, "DDM") == "HARD_BLOCKED"
+    assert _status(report, "DDM") == "NOT_APPLICABLE"
+    assert report.gate_status == "PASS"
 
 
 def test_dividend_without_history_soft_blocks_ddm(data_dir: Path) -> None:
@@ -173,3 +174,15 @@ def test_warnings_keep_the_check_name(data_dir: Path) -> None:
 
     assert any("PE Ratio" in w for w in report.warnings)
     assert not any(w.startswith("general") for w in report.warnings)
+
+
+def test_bank_skips_ratios_that_do_not_apply(data_dir: Path) -> None:
+    _write_dataset(
+        data_dir, company={"sector": "Financial Services", "industry": "Banks - Diversified"}
+    )
+    report = build_data_sanity_report("TEST")
+
+    assert _status(report, "Gross Margin") == "NOT_APPLICABLE"
+    assert _status(report, "DCF") == "NOT_APPLICABLE"
+    assert _status(report, "PE Ratio") == "VALID"
+    assert report.gate_status == "PASS"
