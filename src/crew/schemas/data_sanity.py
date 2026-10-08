@@ -13,6 +13,7 @@ from src.crew.schemas._base import (
     normalize_payload_lists,
 )
 from src.crew.schemas._constants import (
+    CORE_DATA_FILES,
     DATA_SANITY_SUMMARY_RE,
     FILE_LEVEL_ISSUE_RE,
     FILE_STATUS_RE,
@@ -70,9 +71,11 @@ class DataSanityOutput(BaseModel):
         if not DATA_SANITY_SUMMARY_RE.fullmatch(summary_text):
             payload["summary"] = f"{hard_count} hard blocks, {soft_count} soft blocks identified"
 
-        if hard_count > 0:
+        # Gate = is the core data present? Blocked metrics are skips, not failures.
+        missing = " ".join(str(f) for f in payload.get("missing_or_invalid_files") or [])
+        if any(name in missing for name in CORE_DATA_FILES):
             payload["gate_status"] = "FAIL"
-        elif soft_count > 0:
+        elif hard_count > 0 or soft_count > 0:
             payload["gate_status"] = "PASS_WITH_SKIPS"
         else:
             payload["gate_status"] = "PASS"
@@ -149,7 +152,7 @@ class DataSanityOutput(BaseModel):
 
         Stage: runs after all fields are validated.
         Behaviour: silently corrects gate_status if it doesn't match the
-        expected value derived from hard/soft block counts.
+        expected value derived from core-file availability and block counts.
         """
         statuses = [item.status for item in self.ratio_applicability]
         statuses.extend(item.status for item in self.valuation_model_applicability)
@@ -157,10 +160,12 @@ class DataSanityOutput(BaseModel):
         has_hard = any(s == "HARD_BLOCKED" for s in statuses)
         has_soft = any(s == "SOFT_BLOCKED" for s in statuses)
 
+        # Gate = is the core data present? Blocked metrics are skips, not failures.
+        missing = " ".join(self.missing_or_invalid_files)
         expected = "PASS"
-        if has_hard:
+        if any(name in missing for name in CORE_DATA_FILES):
             expected = "FAIL"
-        elif has_soft:
+        elif has_hard or has_soft:
             expected = "PASS_WITH_SKIPS"
 
         if self.gate_status != expected:

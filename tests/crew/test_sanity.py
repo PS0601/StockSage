@@ -114,7 +114,7 @@ def test_missing_book_value_hard_blocks_pb(data_dir: Path) -> None:
     report = build_data_sanity_report("TEST")
 
     assert _status(report, "P/B Ratio") == "HARD_BLOCKED"
-    assert report.gate_status == "FAIL"
+    assert report.gate_status == "PASS_WITH_SKIPS"
 
 
 def test_no_dividend_makes_ddm_not_applicable(data_dir: Path) -> None:
@@ -185,4 +185,18 @@ def test_bank_skips_ratios_that_do_not_apply(data_dir: Path) -> None:
     assert _status(report, "Gross Margin") == "NOT_APPLICABLE"
     assert _status(report, "DCF") == "NOT_APPLICABLE"
     assert _status(report, "PE Ratio") == "VALID"
+    assert report.gate_status == "PASS"
+
+
+def test_missing_core_file_fails_the_gate(data_dir: Path) -> None:
+    _write_dataset(data_dir, skip=("company_info.csv",))
+    report = build_data_sanity_report("TEST")
+
+    assert report.gate_status == "FAIL"
+
+
+def test_missing_optional_file_does_not_fail_the_gate(data_dir: Path) -> None:
+    _write_dataset(data_dir, skip=("news.csv",))
+    report = build_data_sanity_report("TEST")
+
     assert report.gate_status == "PASS"

@@ -26,6 +26,7 @@ from src.core.config.markets import is_indian_symbol
 from src.crew.facts import _f, _read_csv, _s
 from src.crew.schemas import DataSanityOutput
 from src.crew.schemas._base import deterministic_data_sanity_file_statuses
+from src.crew.schemas._constants import CORE_DATA_FILES
 from src.crew.schemas._items import ApplicabilityItem
 
 # (label, value, must_be_positive)
@@ -225,9 +226,10 @@ def build_data_sanity_report(symbol: str) -> DataSanityOutput:
     soft = [item for item in items if item.status == "SOFT_BLOCKED"]
     validated, missing = deterministic_data_sanity_file_statuses(sym)
 
-    if hard:
+    core_missing = any(name in entry for entry in missing for name in CORE_DATA_FILES)
+    if core_missing:
         gate = "FAIL"
-    elif soft:
+    elif hard or soft:
         gate = "PASS_WITH_SKIPS"
     else:
         gate = "PASS"

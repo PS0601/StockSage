@@ -34,3 +34,13 @@ CONFIDENCE_FROM_ADJUSTMENT: dict[str, str] = {
     "reduce": "Low",
     "reduced": "Low",
 }
+
+# Files without which the analysis cannot be trusted at all. Missing any of these
+# fails the data quality gate; missing optional files (news, holders) does not.
+CORE_DATA_FILES = (
+    "company_info.csv",
+    "historical_prices.csv",
+    "income_statement.csv",
+    "balance_sheet.csv",
+    "cash_flow.csv",
+)
