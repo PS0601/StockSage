@@ -20,12 +20,13 @@ from src.core.market.stock_data import StockData
 logger = logging.getLogger(__name__)
 
 
-_SAFE_SYMBOL_RE = re.compile(r"^[A-Z0-9.]{1,20}$")
+_SAFE_SYMBOL_RE = re.compile(r"^[A-Z0-9.-]{1,20}$")
 
 
 def _validate_symbol_for_path(symbol: str) -> str:
     """Reject symbols that could escape the data directory via path traversal."""
-    if not _SAFE_SYMBOL_RE.fullmatch(symbol):
+    # A name made only of dots ("." or "..") would point at the data folder or its parent.
+    if not _SAFE_SYMBOL_RE.fullmatch(symbol) or set(symbol) == {"."}:
         raise ValueError(f"Invalid symbol for storage: {symbol!r}")
     return symbol
 

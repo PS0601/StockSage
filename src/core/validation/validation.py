@@ -16,7 +16,8 @@ MARKET_NAMES = {"US": "US", "IN": "Indian"}
 class USFormatValidator(FormatValidator):
     """Validates US ticker format."""
 
-    PATTERN = re.compile(r"^[A-Z]{1,5}$")
+    # Optional share class, as Yahoo writes it: BRK-B, BF-B, HEI-A
+    PATTERN = re.compile(r"^[A-Z]{1,5}(-[A-Z])?$")
 
     def validate(self, symbol: str) -> ValidationResult:
         if self.PATTERN.match(symbol):
