@@ -140,11 +140,40 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 | Health badge said STRONG while profits fell (TSLA) | Rule ignored earnings | STRONG requires growing earnings as well |
 | Share-class tickers rejected (BRK-B) | Validation allowed letters only | Share classes accepted; storage still rejects unsafe names |
 | Indian companies sized in dollars | Rupee market caps compared with dollar thresholds | Rupee thresholds for Indian stocks |
+| Agents quoted blocked ratios anyway (TSLA PEG 4.54x after the gate blocked PEG) | The valuation prompt said "skip blocked ratios" but also asked for raw `trailingPE`/`earningsGrowth` and a "PEG of X" sentence, and the agent read `trailingPegRatio` straight from the CSV | Prompt rule: a ratio shown as N/A must never get a number. That reduced it but an agent still quoted the CSV value as "context only", so the CSV tool now hides blocked ratio columns from agents (code guardrail). Found with the grounding eval |
 | CI had never passed | Formatting issues; 84 known dependency vulnerabilities | Fixed formatting; upgraded lockfile (80 fixed, 4 unpatched advisories in an unused dependency documented in CI) |
 
 Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies. Missing values show plain N/A (no "N/Ax"), data-quality issues name the failing check, sentiment is downgraded after heavy underperformance, market cap falls back to non-diluted cap when missing, and Google Trends retries with the common company name.
 
-**Quality gates:** 312 tests (81% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+**Quality gates:** 349 tests (83% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+
+## Evaluation
+
+Tests check that the Python is correct; the **grounding eval** checks that the agents stay faithful to it. It runs the real 6-agent crew on fixed tickers (AAPL, JPM, KO, TSLA, RELIANCE.NS) several times and grades every agent's output with deterministic checks (no LLM grading another LLM):
+
+- **Where every number came from:** computed facts, raw CSV data the agent read, a benchmark written in the prompt, arithmetic on numbers in the same sentence (checked for correctness), or **unexplained**: the hallucination candidates
+- **Blocked ratios:** ratios the data sanity gate blocked must not be given a value
+- **Contradictions:** text must not contradict the computed performance badge, valuation verdict or health status
+- **Schema validity** and **verdict stability** across runs
+
+```bash
+uv run python -m evals.run_grounding_eval                      # 5 tickers x 2 runs, ~12 min
+uv run python -m evals.run_grounding_eval --tickers AAPL --runs 1
+```
+
+**Results** (DeepSeek, 5 tickers × 2 runs, about 3,000 numbers graded per run): 3-4% unexplained, 100% of outputs in the expected schema, 0 contradictions after grader fixes, the same verdict on both runs for every ticker. Latest run: [`evals/results.md`](evals/results.md).
+
+**What the eval found:**
+
+| Finding | What it was | Outcome |
+|---|---|---|
+| First run: only 46% of numbers "grounded" | The grader only checked the computed facts, but the prompts tell agents to read the raw CSVs | Grader attributes each number to its source; unexplained fell to 4% |
+| AAPL's 10 unexplained numbers | Read by hand: 9 were correct arithmetic across sentences (e.g. 24.09% / 12.76% − 1 = 89% more volatile), 1 an unverifiable aggregate ("insider sales well above $200M") | No invented numbers; unexplained is an upper bound, not a hallucination rate |
+| Blocked PEG quoted for TSLA and RELIANCE.NS | Contradictory valuation prompt, and the raw `trailingPegRatio` was readable in the CSV (see Reliability fixes) | Prompt fix: 0 violations in a 4-run check, but the full 10-run eval still found one ("context only: trailing PEG of 4.52"). Lesson: a prompt lowers the rate, code guarantees it. The CSV tool now masks blocked ratio columns |
+| Valuation prompt hard-codes "{market_index} average (~22x)" and "tech avg is 5-15x" | Static benchmarks, not live data | Reported by the eval as prompt-sourced numbers; candidate for a future fix |
+| Grader false positives | "far from the undervalued zone", "cash outperformed the stock", a reviewer *flagging* a blocked ratio, "gross margin 0.0% (not meaningful for a bank)" | Grader fixed, each case added as a regression test (33 grader tests in `tests/evals`) |
+
+Limits: 5 tickers and 2 runs per ticker catch regressions but are not a statistically strong sample; market data is a snapshot, so re-runs on refreshed data can differ; the sentiment agent's web-search numbers can't be verified and are reported separately.
 
 ## Make commands
 

@@ -4,6 +4,9 @@ analyze_valuation_ratios:
     ratio comparisons.
 
     PRE-CONDITION: Only analyze ratios marked VALID in the DATA SANITY RESULTS below. Skip SOFT_BLOCKED and HARD_BLOCKED.
+    BLOCKED RATIOS: a ratio that shows N/A in the VERIFIED FACTS is blocked. Never compute it yourself from
+    the raw CSV values, never estimate it, and never give it a number anywhere in your output
+    (summary, metrics, notes or implications). Write "N/A (blocked by data sanity check)" instead.
 
     DATA SANITY RESULTS (computed in Python by fixed rules; authoritative):
     {data_sanity_facts}
@@ -31,15 +34,15 @@ analyze_valuation_ratios:
         Compare vs trailing P/E.
         State: "Forward PE X vs trailing PE Y — market expects Z% earnings growth/contraction."
 
-      P/B Ratio (computed):
+      P/B Ratio (computed; skip entirely if N/A in the VERIFIED FACTS):
         Compare vs 1.0 and typical range for sector.
         State: "Trading at Xx book — tech avg is 5-15x, financials 1-2x."
 
-      EV/EBITDA (computed):
+      EV/EBITDA (computed; skip entirely if N/A in the VERIFIED FACTS):
         Below 10 = potentially cheap, 10-15 = fair, above 15 = expensive.
         State: "EV/EBITDA of X — [cheap/fair/expensive] vs sector range."
 
-      PEG Ratio (computed):
+      PEG Ratio (computed; skip entirely if N/A in the VERIFIED FACTS):
         Below 1.0 = growth underpriced, above 2.0 = growth overpriced.
         State: "PEG of X with Y% growth — growth [not yet / already / more than] priced in."
 

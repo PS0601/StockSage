@@ -27,6 +27,43 @@ from src.core.config.data_contracts import (
     DATA_DIR,
 )
 
+# Precomputed ratio columns in company_info.csv for each data-sanity rule. When the sanity
+# gate blocks a ratio, these values are hidden from agents: the facts already show N/A, and
+# without this an agent could still read e.g. trailingPegRatio straight from the CSV
+# (found by the grounding eval: TSLA "reported trailing PEG of 4.52" after PEG was blocked).
+BLOCKED_RATIO_COLUMNS: dict[str, tuple[str, ...]] = {
+    "PE Ratio": ("trailingPE",),
+    "Forward PE": ("forwardPE",),
+    "P/B Ratio": ("priceToBook",),
+    "P/S Ratio": ("priceToSalesTrailing12Months",),
+    "EV/EBITDA": ("enterpriseToEbitda",),
+    "PEG Ratio": ("pegRatio", "trailingPegRatio"),
+    "ROE": ("returnOnEquity",),
+    "ROA": ("returnOnAssets",),
+    "Debt-to-Equity": ("debtToEquity",),
+    "Current Ratio": ("currentRatio",),
+    "Gross Margin": ("grossMargins",),
+    "Net Margin": ("profitMargins",),
+    "Operating Margin": ("operatingMargins",),
+}
+BLOCKED_VALUE = "N/A (blocked by data sanity check)"
+
+
+def blocked_columns(symbol: str) -> set[str]:
+    """company_info columns whose ratio the data-sanity gate did not mark VALID."""
+    from src.crew.sanity import build_data_sanity_report
+
+    try:
+        report = build_data_sanity_report(symbol)
+    except Exception:
+        return set()
+    return {
+        col
+        for item in report.ratio_applicability
+        if item.status != "VALID"
+        for col in BLOCKED_RATIO_COLUMNS.get(item.name, ())
+    }
+
 
 class CSVReaderTool(BaseTool):
     """Reads a CSV file for a given stock symbol from the data directory."""
@@ -57,10 +94,13 @@ class CSVReaderTool(BaseTool):
 
             # company_info is a single-row wide table — transpose for readability
             if file_name == "company_info.csv" and len(df) <= 2:
+                hidden = blocked_columns(symbol)
                 info_lines = []
                 for col in df.columns:
                     val = df[col].iloc[0]
-                    if pd.notna(val) and str(val).strip():
+                    if col in hidden:
+                        info_lines.append(f"{col}: {BLOCKED_VALUE}")
+                    elif pd.notna(val) and str(val).strip():
                         info_lines.append(f"{col}: {val}")
                 return "\n".join(info_lines)
 
