@@ -187,7 +187,7 @@ def classify(agent_text: str, facts_text: str, data_text: str = "", prompt_text:
                 out["derived"].append(n.text)
             else:
                 out["unexplained"].append(n.text)
-                out["unexplained_context"].append(" ".join(sentence.split())[:220])
+                out["unexplained_context"].append(" ".join(sentence.split())[:220].rstrip())
     return out
 
 

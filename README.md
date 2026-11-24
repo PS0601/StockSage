@@ -145,7 +145,7 @@ The pipeline originally ran end to end but produced unreliable numbers. These ch
 
 Also: web search degrades gracefully without an API key, incomplete same-day price rows are dropped, and market detection uses one shared helper instead of six inconsistent copies. Missing values show plain N/A (no "N/Ax"), data-quality issues name the failing check, sentiment is downgraded after heavy underperformance, market cap falls back to non-diluted cap when missing, and Google Trends retries with the common company name.
 
-**Quality gates:** 349 tests (83% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
+**Quality gates:** 350 tests (83% coverage), ruff, mypy, pip-audit and bandit run in CI on every push.
 
 ## Evaluation
 
@@ -161,7 +161,7 @@ uv run python -m evals.run_grounding_eval                      # 5 tickers x 2 r
 uv run python -m evals.run_grounding_eval --tickers AAPL --runs 1
 ```
 
-**Results** (DeepSeek, 5 tickers × 2 runs, about 3,000 numbers graded per run): 3-4% unexplained, 100% of outputs in the expected schema, 0 contradictions after grader fixes, the same verdict on both runs for every ticker. Latest run: [`evals/results.md`](evals/results.md).
+**Results** (DeepSeek, 5 tickers × 2 runs, about 3,000 numbers graded per run): 3% unexplained (77 of 3,042), 0 blocked-ratio violations, 0 contradictions, 100% of outputs in the expected schema, the same verdict on both runs for every ticker. Latest run: [`evals/results.md`](evals/results.md).
 
 **What the eval found:**
 
@@ -169,9 +169,9 @@ uv run python -m evals.run_grounding_eval --tickers AAPL --runs 1
 |---|---|---|
 | First run: only 46% of numbers "grounded" | The grader only checked the computed facts, but the prompts tell agents to read the raw CSVs | Grader attributes each number to its source; unexplained fell to 4% |
 | AAPL's 10 unexplained numbers | Read by hand: 9 were correct arithmetic across sentences (e.g. 24.09% / 12.76% − 1 = 89% more volatile), 1 an unverifiable aggregate ("insider sales well above $200M") | No invented numbers; unexplained is an upper bound, not a hallucination rate |
-| Blocked PEG quoted for TSLA and RELIANCE.NS | Contradictory valuation prompt, and the raw `trailingPegRatio` was readable in the CSV (see Reliability fixes) | Prompt fix: 0 violations in a 4-run check, but the full 10-run eval still found one ("context only: trailing PEG of 4.52"). Lesson: a prompt lowers the rate, code guarantees it. The CSV tool now masks blocked ratio columns |
+| Blocked PEG quoted for TSLA and RELIANCE.NS | Contradictory valuation prompt, and the raw `trailingPegRatio` was readable in the CSV (see Reliability fixes) | Prompt fix: 0 violations in a 4-run check, but the full 10-run eval still found one ("context only: trailing PEG of 4.52"). Lesson: a prompt lowers the rate, code guarantees it. The CSV tool now masks blocked ratio columns: 0 violations in the next full 10-run eval |
 | Valuation prompt hard-codes "{market_index} average (~22x)" and "tech avg is 5-15x" | Static benchmarks, not live data | Reported by the eval as prompt-sourced numbers; candidate for a future fix |
-| Grader false positives | "far from the undervalued zone", "cash outperformed the stock", a reviewer *flagging* a blocked ratio, "gross margin 0.0% (not meaningful for a bank)" | Grader fixed, each case added as a regression test (33 grader tests in `tests/evals`) |
+| Grader false positives | "far from the undervalued zone", "cash outperformed the stock", a reviewer *flagging* a blocked ratio, "gross margin 0.0% (not meaningful for a bank)" | Grader fixed, each case added as a regression test (34 grader tests in `tests/evals`) |
 
 Limits: 5 tickers and 2 runs per ticker catch regressions but are not a statistically strong sample; market data is a snapshot, so re-runs on refreshed data can differ; the sentiment agent's web-search numbers can't be verified and are reported separately.
 

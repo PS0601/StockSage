@@ -260,3 +260,38 @@ def test_not_meaningful_counts_as_flagging():
     # JPM run: quoting the raw value while saying it doesn't apply to a bank is the right call
     text = "Gross margin is 0.0% (not meaningful for a bank)."
     assert blocked_violations(text, {"Gross Margin (%)"}) == []
+
+
+def test_report_has_no_trailing_whitespace():
+    # pre-commit's trailing-whitespace hook failed CI on a generated report
+    from evals.run_grounding_eval import report
+
+    long_sentence = "word " * 60 + "with 12.34% inside"
+    rec = {
+        "symbol": "X",
+        "verdict": "HOLD",
+        "confidence": "Low",
+        "latency_s": 1.0,
+        "data_as_of": "2026-01-01",
+        "run": 1,
+        "tasks": {
+            "generate_investment_report": {
+                "schema_valid": True,
+                "numbers": 1,
+                "sources": {
+                    "facts": [],
+                    "data": [],
+                    "prompt": [],
+                    "derived": [],
+                    "unexplained": ["12.34%"],
+                    "unexplained_context": [long_sentence[:220]],
+                },
+                "ungrounded": ["12.34%"],
+                "blocked_violations": [],
+                "contradictions": [],
+            }
+        },
+    }
+    md = report([rec], {"model": "m", "tickers": ["X"], "runs": 1})
+    assert all(line == line.rstrip() for line in md.splitlines())
+    assert md.endswith("\n")

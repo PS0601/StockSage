@@ -297,7 +297,8 @@ def report(records: list[dict], meta: dict) -> str:
         "Unexplained does not always mean wrong (e.g. a number from general knowledge, or "
         "arithmetic across sentences). Read the examples before drawing conclusions.",
     ]
-    return "\n".join(lines) + "\n"
+    # no trailing whitespace: the repo's pre-commit hooks reject it
+    return "\n".join(line.rstrip() for line in lines) + "\n"
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -338,7 +339,7 @@ def main(argv: list[str] | None = None) -> None:
     md = report(records, meta)
     (OUT_DIR / "results.md").write_text(md, encoding="utf-8")
     (OUT_DIR / "results.json").write_text(
-        json.dumps({"meta": meta, "records": records}, indent=2), encoding="utf-8"
+        json.dumps({"meta": meta, "records": records}, indent=2) + "\n", encoding="utf-8"
     )
     print("\n" + md)
 
